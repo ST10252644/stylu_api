@@ -1,30 +1,32 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\User\\source\\repos\\Stylu\\",
+  "WorkspaceRootPath": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|c:\\users\\user\\source\\repos\\stylu\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Program Files\\dotnet\\sdk\\9.0.304\\Sdks\\Microsoft.NET.Sdk\\targets\\Microsoft.NET.Sdk.DefaultItems.targets||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|c:\\users\\user\\source\\repos\\stylu\\stylu.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "AbsoluteMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|d:\\user\\downloads\\stylu_api-main\\stylu_api-main\\stylu\\stylu.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
       "RelativeMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|solutionrelative:stylu.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|c:\\users\\user\\source\\repos\\stylu\\stylu.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}",
-      "RelativeMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|solutionrelative:stylu.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}"
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\User\\source\\repos\\Stylu\\Controllers\\UserController.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|c:\\users\\user\\source\\repos\\stylu\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|solutionrelative:properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|c:\\users\\user\\source\\repos\\stylu\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "AbsoluteMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|d:\\user\\downloads\\stylu_api-main\\stylu_api-main\\stylu\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
       "RelativeMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|c:\\users\\user\\source\\repos\\stylu\\controllers\\usercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|solutionrelative:controllers\\usercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|d:\\user\\downloads\\stylu_api-main\\stylu_api-main\\stylu\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|d:\\user\\downloads\\stylu_api-main\\stylu_api-main\\stylu\\stylu.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}",
+      "RelativeMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|solutionrelative:stylu.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|d:\\user\\downloads\\stylu_api-main\\stylu_api-main\\stylu\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|solutionrelative:properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     }
   ],
   "DocumentGroupContainers": [
@@ -34,7 +36,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 464,
-          "SelectedChildIndex": 8,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -50,59 +52,45 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "launchSettings.json",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Stylu\\Properties\\launchSettings.json",
-              "RelativeDocumentMoniker": "Properties\\launchSettings.json",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\Stylu\\Properties\\launchSettings.json",
-              "RelativeToolTip": "Properties\\launchSettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-09-25T10:09:21.037Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "Stylu.http",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Stylu\\Stylu.http",
-              "RelativeDocumentMoniker": "Stylu.http",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\Stylu\\Stylu.http",
-              "RelativeToolTip": "Stylu.http",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAVAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003502|",
-              "WhenOpened": "2025-09-25T10:01:51.313Z"
+              "DocumentIndex": 0,
+              "Title": "Microsoft.NET.Sdk.DefaultItems.targets",
+              "DocumentMoniker": "C:\\Program Files\\dotnet\\sdk\\9.0.304\\Sdks\\Microsoft.NET.Sdk\\targets\\Microsoft.NET.Sdk.DefaultItems.targets",
+              "ToolTip": "C:\\Program Files\\dotnet\\sdk\\9.0.304\\Sdks\\Microsoft.NET.Sdk\\targets\\Microsoft.NET.Sdk.DefaultItems.targets",
+              "ViewState": "AgIAAHMAAAAAAAAAAAASwIAAAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003801|",
+              "WhenOpened": "2025-10-03T14:22:46.837Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
               "Title": "Stylu.csproj",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Stylu\\Stylu.csproj",
+              "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\Stylu.csproj",
               "RelativeDocumentMoniker": "Stylu.csproj",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\Stylu\\Stylu.csproj",
+              "ToolTip": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\Stylu.csproj",
               "RelativeToolTip": "Stylu.csproj",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2025-09-24T09:02:55.974Z"
+              "WhenOpened": "2025-09-24T09:02:55.974Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 2,
               "Title": "UserController.cs",
               "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Stylu\\Controllers\\UserController.cs",
-              "RelativeDocumentMoniker": "Controllers\\UserController.cs",
               "ToolTip": "C:\\Users\\User\\source\\repos\\Stylu\\Controllers\\UserController.cs",
-              "RelativeToolTip": "Controllers\\UserController.cs",
               "ViewState": "AgIAAFQAAAAAAAAAAAAmwHcAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-09-24T08:52:01.974Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 3,
               "Title": "appsettings.json",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Stylu\\appsettings.json",
+              "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\appsettings.json",
               "RelativeDocumentMoniker": "appsettings.json",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\Stylu\\appsettings.json",
+              "ToolTip": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\appsettings.json",
               "RelativeToolTip": "appsettings.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
@@ -110,16 +98,39 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 4,
               "Title": "Program.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Stylu\\Program.cs",
+              "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\Program.cs",
               "RelativeDocumentMoniker": "Program.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\Stylu\\Program.cs",
+              "ToolTip": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\Program.cs",
               "RelativeToolTip": "Program.cs",
-              "ViewState": "AgIAAAQAAAAAAAAAAAAiwBgAAAAjAAAAAAAAAA==",
+              "ViewState": "AgIAAAQAAAAAAAAAAAAiwBgAAAAfAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-24T08:48:29.166Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-24T08:48:29.166Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Stylu.http",
+              "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\Stylu.http",
+              "RelativeDocumentMoniker": "Stylu.http",
+              "ToolTip": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\Stylu.http",
+              "RelativeToolTip": "Stylu.http",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003502|",
+              "WhenOpened": "2025-09-25T10:01:51.313Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "launchSettings.json",
+              "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\Properties\\launchSettings.json",
+              "RelativeDocumentMoniker": "Properties\\launchSettings.json",
+              "ToolTip": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\Properties\\launchSettings.json",
+              "RelativeToolTip": "Properties\\launchSettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-09-25T10:09:21.037Z"
             }
           ]
         }

@@ -1,0 +1,54 @@
+[
+  {
+    "ContainingType": "Stylu.Controllers.SettingsController",
+    "Method": "GetProfile",
+    "RelativePath": "api/Settings/profile",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Stylu.Controllers.SettingsController",
+    "Method": "UpdateProfile",
+    "RelativePath": "api/Settings/profile",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestBody",
+        "Type": "System.Text.Json.JsonElement",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Stylu.Controllers.SettingsController",
+    "Method": "GetSystemSettings",
+    "RelativePath": "api/Settings/system",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Stylu.Controllers.SettingsController",
+    "Method": "UpdateSystemSettings",
+    "RelativePath": "api/Settings/system",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestBody",
+        "Type": "System.Text.Json.JsonElement",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  }
+]

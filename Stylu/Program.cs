@@ -1,16 +1,50 @@
-
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services
+// Add controllers and swagger
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
-// Configure CORS (important for mobile app communication)
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Stylu API",
+        Version = "v1",
+        Description = "API for Stylu application with Supabase authentication"
+    });
+
+    // Swagger JWT config
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: 'Bearer eyJhbGciOiJI...'",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new List<string>()
+        }
+    });
+});
+
+// CORS (allow Android app to call API)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAndroidApp", policy =>
@@ -25,50 +59,35 @@ builder.Services.AddCors(options =>
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        var supabaseUrl = builder.Configuration["Supabase:Url"];
-        var supabaseJwtSecret = builder.Configuration["Supabase:JwtSecret"];
-
-        options.RequireHttpsMetadata = false; // Set to true in production
-        options.SaveToken = true;
-
+        options.RequireHttpsMetadata = false; // for localhost testing
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidIssuer = supabaseUrl + "/auth/v1", // Correct issuer format
+            ValidIssuer = $"https://{builder.Configuration["Supabase:ProjectRef"]}.supabase.co/auth/v1",
+
             ValidateAudience = true,
             ValidAudience = "authenticated",
+
             ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(2),
+
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(
-                Convert.FromBase64String(supabaseJwtSecret) // Supabase JWT secret is base64 encoded
-            ),
-            ClockSkew = TimeSpan.FromMinutes(5), // Allow some clock skew
-            NameClaimType = "sub", // Supabase uses 'sub' for user ID
-            RoleClaimType = "role" // Supabase uses 'role' for user role
+                Encoding.UTF8.GetBytes(builder.Configuration["Supabase:JwtSecret"])
+            )
         };
 
+        // Optional: log failed validations
         options.Events = new JwtBearerEvents
         {
-            OnAuthenticationFailed = context =>
+            OnAuthenticationFailed = ctx =>
             {
-                Console.WriteLine($"Authentication failed: {context.Exception.Message}");
-                if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
-                {
-                    context.Response.Headers.Add("Token-Expired", "true");
-                }
+                Console.WriteLine($"JWT Authentication Failed: {ctx.Exception.Message}");
                 return Task.CompletedTask;
             },
-            OnTokenValidated = context =>
+            OnTokenValidated = ctx =>
             {
-                Console.WriteLine("Token validated successfully");
-                var userId = context.Principal?.FindFirst("sub")?.Value;
-                var email = context.Principal?.FindFirst("email")?.Value;
-                Console.WriteLine($"User ID: {userId}, Email: {email}");
-                return Task.CompletedTask;
-            },
-            OnChallenge = context =>
-            {
-                Console.WriteLine("Authentication challenge triggered");
+                Console.WriteLine($"JWT Authentication Succeeded for user: {ctx.Principal.Identity.Name}");
                 return Task.CompletedTask;
             }
         };
@@ -76,19 +95,27 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+// HTTP client for Supabase REST
+builder.Services.AddHttpClient("Supabase", client =>
+{
+    client.BaseAddress = new Uri($"https://{builder.Configuration["Supabase:ProjectRef"]}.supabase.co");
+    client.DefaultRequestHeaders.Add("apikey", builder.Configuration["Supabase:AnonKey"]);
+});
+
 var app = builder.Build();
 
-// Configure pipeline
+// Middleware
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-app.UseCors("AllowAndroidApp"); // Enable CORS
-app.UseAuthentication(); // Must come before UseAuthorization
+app.UseCors("AllowAndroidApp");
+
+app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 
 app.Run();
