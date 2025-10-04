@@ -3,6 +3,14 @@
   "WorkspaceRootPath": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|d:\\user\\downloads\\stylu_api-main\\stylu_api-main\\stylu\\dockerfile||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|solutionrelative:dockerfile||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|d:\\user\\downloads\\stylu_api-main\\stylu_api-main\\stylu\\render.yaml||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|solutionrelative:render.yaml||{8B382828-6202-11D1-8870-0000F87579D2}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|d:\\user\\downloads\\stylu_api-main\\stylu_api-main\\stylu\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
       "RelativeMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     },
@@ -57,6 +65,32 @@
             {
               "$type": "Document",
               "DocumentIndex": 1,
+              "Title": "render.yaml",
+              "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\render.yaml",
+              "RelativeDocumentMoniker": "render.yaml",
+              "ToolTip": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\render.yaml",
+              "RelativeToolTip": "render.yaml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003775|",
+              "WhenOpened": "2025-10-04T10:36:56.166Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Dockerfile",
+              "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\Dockerfile",
+              "RelativeDocumentMoniker": "Dockerfile",
+              "ToolTip": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\Dockerfile",
+              "RelativeToolTip": "Dockerfile",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001001|",
+              "WhenOpened": "2025-10-04T10:35:38.256Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
               "Title": "Program.cs",
               "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\Program.cs",
               "RelativeDocumentMoniker": "Program.cs",
@@ -69,7 +103,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
               "Title": "appsettings.json",
               "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\appsettings.json",
               "RelativeDocumentMoniker": "appsettings.json",
@@ -82,7 +116,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 4,
               "Title": "SettingsController.cs",
               "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\Controllers\\SettingsController.cs",
               "RelativeDocumentMoniker": "Controllers\\SettingsController.cs",
@@ -95,7 +129,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 5,
               "Title": "Microsoft.NET.Sdk.DefaultItems.targets",
               "DocumentMoniker": "C:\\Program Files\\dotnet\\sdk\\9.0.304\\Sdks\\Microsoft.NET.Sdk\\targets\\Microsoft.NET.Sdk.DefaultItems.targets",
               "ToolTip": "C:\\Program Files\\dotnet\\sdk\\9.0.304\\Sdks\\Microsoft.NET.Sdk\\targets\\Microsoft.NET.Sdk.DefaultItems.targets",
@@ -106,7 +140,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 6,
               "Title": "Stylu.csproj",
               "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\Stylu.csproj",
               "RelativeDocumentMoniker": "Stylu.csproj",
@@ -119,7 +153,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 7,
               "Title": "UserController.cs",
               "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Stylu\\Controllers\\UserController.cs",
               "ToolTip": "C:\\Users\\User\\source\\repos\\Stylu\\Controllers\\UserController.cs",
@@ -129,7 +163,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 8,
               "Title": "Stylu.http",
               "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\Stylu.http",
               "RelativeDocumentMoniker": "Stylu.http",
@@ -141,7 +175,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 9,
               "Title": "launchSettings.json",
               "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\Properties\\launchSettings.json",
               "RelativeDocumentMoniker": "Properties\\launchSettings.json",
