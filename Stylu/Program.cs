@@ -6,8 +6,8 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // Get PORT from environment variable (Railway requirement)
-var port = Environment.GetEnvironmentVariable("PORT") ?? "5038";
-builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+builder.WebHost.UseUrls("http://0.0.0.0:" + (Environment.GetEnvironmentVariable("PORT") ?? "5000"));
+
 
 // Rest of your configuration...
 // Add controllers and swagger
