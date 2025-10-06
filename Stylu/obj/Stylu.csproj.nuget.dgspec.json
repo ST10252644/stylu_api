@@ -1,32 +1,27 @@
 {
   "format": 1,
   "restore": {
-    "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\Stylu.csproj": {}
+    "/Users/marenelessing/Projects/stylu_api-main-2/Stylu/Stylu.csproj": {}
   },
   "projects": {
-    "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\Stylu.csproj": {
+    "/Users/marenelessing/Projects/stylu_api-main-2/Stylu/Stylu.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\Stylu.csproj",
+        "projectUniqueName": "/Users/marenelessing/Projects/stylu_api-main-2/Stylu/Stylu.csproj",
         "projectName": "Stylu",
-        "projectPath": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\Stylu.csproj",
-        "packagesPath": "C:\\Users\\User\\.nuget\\packages\\",
-        "outputPath": "D:\\User\\Downloads\\stylu_api-main\\stylu_api-main\\Stylu\\obj\\",
+        "projectPath": "/Users/marenelessing/Projects/stylu_api-main-2/Stylu/Stylu.csproj",
+        "packagesPath": "/Users/marenelessing/.nuget/packages/",
+        "outputPath": "/Users/marenelessing/Projects/stylu_api-main-2/Stylu/obj/",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\User\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/Users/marenelessing/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net7.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
+          "/Users/marenelessing/Projects": {},
+          "/usr/local/share/dotnet/sdk/7.0.317/Sdks/Microsoft.NET.Sdk.Web/library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -39,13 +34,7 @@
           "warnAsError": [
             "NU1605"
           ]
-        },
-        "restoreAuditProperties": {
-          "enableAudit": "true",
-          "auditLevel": "low",
-          "auditMode": "direct"
-        },
-        "SdkAnalysisLevel": "9.0.300"
+        }
       },
       "frameworks": {
         "net7.0": {
@@ -91,7 +80,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/7.0.317/RuntimeIdentifierGraph.json"
         }
       }
     }
