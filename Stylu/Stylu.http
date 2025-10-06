@@ -1,6 +1,0 @@
-@Stylu_HostAddress = http://localhost:5038
-
-GET {{Stylu_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
