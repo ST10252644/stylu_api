@@ -1,6 +1,7 @@
-# services:
-#   - type: web
-#     name: stylu-api
-#     env: docker
-#     plan: free
-#     autoDeploy: true
+services:
+  - type: web
+    name: styli-api
+    env: dotnet
+    buildCommand: dotnet publish Stylu/Stylu.csproj -c Release -o out
+    startCommand: dotnet out/Stylu.dll
+    autoDeploy: true
