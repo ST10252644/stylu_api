@@ -3,6 +3,10 @@
   "WorkspaceRootPath": "D:\\User\\Downloads\\stylu_api-main (2)\\stylu_api-main\\Stylu\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|d:\\user\\downloads\\stylu_api-main (2)\\stylu_api-main\\stylu\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|d:\\user\\downloads\\stylu_api-main (2)\\stylu_api-main\\stylu\\stylu.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
       "RelativeMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|solutionrelative:stylu.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
     },
@@ -45,10 +49,6 @@
       "RelativeMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|solutionrelative:render.yaml||{8B382828-6202-11D1-8870-0000F87579D2}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|d:\\user\\downloads\\stylu_api-main (2)\\stylu_api-main\\stylu\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|d:\\user\\downloads\\stylu_api-main (2)\\stylu_api-main\\stylu\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{87A53D19-D3B1-4930-8F70-542F7B27A4A9}|Stylu.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -71,7 +71,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 464,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Bookmark",
@@ -87,20 +87,33 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 1,
               "Title": "Stylu.csproj",
               "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main (2)\\stylu_api-main\\Stylu\\Stylu.csproj",
               "RelativeDocumentMoniker": "Stylu.csproj",
               "ToolTip": "D:\\User\\Downloads\\stylu_api-main (2)\\stylu_api-main\\Stylu\\Stylu.csproj",
               "RelativeToolTip": "Stylu.csproj",
-              "ViewState": "AgIAAA4AAAAAAAAAAAAuwBcAAAAOAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAuwBkAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
               "WhenOpened": "2025-09-24T09:02:55.974Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 0,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main (2)\\stylu_api-main\\Stylu\\appsettings.json",
+              "RelativeDocumentMoniker": "appsettings.json",
+              "ToolTip": "D:\\User\\Downloads\\stylu_api-main (2)\\stylu_api-main\\Stylu\\appsettings.json",
+              "RelativeToolTip": "appsettings.json",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAgwBMAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-09-24T08:50:15.067Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
               "Title": "PushNotificationsController.cs",
               "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main (2)\\stylu_api-main\\Stylu\\Controllers\\PushNotificationsController.cs",
               "RelativeDocumentMoniker": "Controllers\\PushNotificationsController.cs",
@@ -108,12 +121,11 @@
               "RelativeToolTip": "Controllers\\PushNotificationsController.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAJkBAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-06T12:55:55.882Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-06T12:55:55.882Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "SupabaseSignUpResponse.cs",
               "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main (2)\\stylu_api-main\\Stylu\\Models\\SupabaseSignUpResponse.cs",
               "RelativeDocumentMoniker": "Models\\SupabaseSignUpResponse.cs",
@@ -121,12 +133,11 @@
               "RelativeToolTip": "Models\\SupabaseSignUpResponse.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-06T12:47:21.367Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-06T12:47:21.367Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 7,
               "Title": "ItemController.cs",
               "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main (2)\\stylu_api-main\\Stylu\\Controllers\\ItemController.cs",
               "RelativeDocumentMoniker": "Controllers\\ItemController.cs",
@@ -134,12 +145,11 @@
               "RelativeToolTip": "Controllers\\ItemController.cs",
               "ViewState": "AgIAAGEBAAAAAAAAAAAmwG8BAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-06T12:46:55.095Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-06T12:46:55.095Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 6,
               "Title": "OutfitController.cs",
               "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main (2)\\stylu_api-main\\Stylu\\Controllers\\OutfitController.cs",
               "RelativeDocumentMoniker": "Controllers\\OutfitController.cs",
@@ -147,12 +157,11 @@
               "RelativeToolTip": "Controllers\\OutfitController.cs",
               "ViewState": "AgIAAB0BAAAAAAAAAAAmwCsBAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-04T12:18:14.017Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-10-04T12:18:14.017Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 5,
               "Title": "SettingsController.cs",
               "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main (2)\\stylu_api-main\\Stylu\\Controllers\\SettingsController.cs",
               "RelativeDocumentMoniker": "Controllers\\SettingsController.cs",
@@ -160,12 +169,11 @@
               "RelativeToolTip": "Controllers\\SettingsController.cs",
               "ViewState": "AgIAABkBAAAAAAAAAAAmwCcBAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-10-04T09:47:11.737Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-10-04T09:47:11.737Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
+              "DocumentIndex": 8,
               "Title": "AuthController.cs",
               "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main (2)\\stylu_api-main\\Stylu\\Controllers\\AuthController.cs",
               "RelativeDocumentMoniker": "Controllers\\AuthController.cs",
@@ -173,12 +181,11 @@
               "RelativeToolTip": "Controllers\\AuthController.cs",
               "ViewState": "AgIAAD0AAAAAAAAAAABBwAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-06T12:46:50.103Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-06T12:46:50.103Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 4,
               "Title": "SignUpRequest.cs",
               "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main (2)\\stylu_api-main\\Stylu\\Models\\SignUpRequest.cs",
               "RelativeDocumentMoniker": "Models\\SignUpRequest.cs",
@@ -186,12 +193,11 @@
               "RelativeToolTip": "Models\\SignUpRequest.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-11-06T12:47:17.637Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-11-06T12:47:17.637Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 8,
+              "DocumentIndex": 9,
               "Title": "Microsoft.NET.Sdk.DefaultItems.targets",
               "DocumentMoniker": "C:\\Program Files\\dotnet\\sdk\\9.0.304\\Sdks\\Microsoft.NET.Sdk\\targets\\Microsoft.NET.Sdk.DefaultItems.targets",
               "ToolTip": "C:\\Program Files\\dotnet\\sdk\\9.0.304\\Sdks\\Microsoft.NET.Sdk\\targets\\Microsoft.NET.Sdk.DefaultItems.targets",
@@ -200,7 +206,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 10,
               "Title": "Microsoft.PackageDependencyResolution.targets",
               "DocumentMoniker": "C:\\Program Files\\dotnet\\sdk\\9.0.304\\Sdks\\Microsoft.NET.Sdk\\targets\\Microsoft.PackageDependencyResolution.targets",
               "ToolTip": "C:\\Program Files\\dotnet\\sdk\\9.0.304\\Sdks\\Microsoft.NET.Sdk\\targets\\Microsoft.PackageDependencyResolution.targets",
@@ -209,7 +215,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
+              "DocumentIndex": 11,
               "Title": "render.yaml",
               "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main (2)\\stylu_api-main\\Stylu\\render.yaml",
               "RelativeDocumentMoniker": "render.yaml",
@@ -217,8 +223,7 @@
               "RelativeToolTip": "render.yaml",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003775|",
-              "WhenOpened": "2025-10-04T10:36:56.166Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-10-04T10:36:56.166Z"
             },
             {
               "$type": "Document",
@@ -230,21 +235,7 @@
               "RelativeToolTip": "Program.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAgAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-24T08:48:29.166Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 11,
-              "Title": "appsettings.json",
-              "DocumentMoniker": "D:\\User\\Downloads\\stylu_api-main (2)\\stylu_api-main\\Stylu\\appsettings.json",
-              "RelativeDocumentMoniker": "appsettings.json",
-              "ToolTip": "D:\\User\\Downloads\\stylu_api-main (2)\\stylu_api-main\\Stylu\\appsettings.json",
-              "RelativeToolTip": "appsettings.json",
-              "ViewState": "AgIAAAEAAAAAAAAAAABBwBAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-09-24T08:50:15.067Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-24T08:48:29.166Z"
             },
             {
               "$type": "Document",
@@ -265,8 +256,7 @@
               "RelativeToolTip": "Stylu.http",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAVAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003502|",
-              "WhenOpened": "2025-09-25T10:01:51.313Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-25T10:01:51.313Z"
             },
             {
               "$type": "Document",
@@ -278,8 +268,7 @@
               "RelativeToolTip": "Properties\\launchSettings.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-09-25T10:09:21.037Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-25T10:09:21.037Z"
             }
           ]
         }
