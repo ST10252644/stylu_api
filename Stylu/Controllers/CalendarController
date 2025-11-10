@@ -1,0 +1,314 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
+
+namespace Stylu.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    [Authorize]
+    public class CalendarController : ControllerBase
+    {
+        private readonly HttpClient _httpClient;
+        private readonly IConfiguration _config;
+
+        public CalendarController(HttpClient httpClient, IConfiguration config)
+        {
+            _httpClient = httpClient;
+            _config = config;
+        }
+
+        /// <summary>
+        /// Schedule an outfit for a specific date
+        /// POST /api/Calendar/schedule
+        /// </summary>
+        [HttpPost("schedule")]
+        public async Task<IActionResult> ScheduleOutfit([FromBody] JsonElement requestBody)
+        {
+            var userToken = Request.Headers["Authorization"].ToString();
+            if (string.IsNullOrEmpty(userToken))
+                return Unauthorized(new { error = "Missing token" });
+
+            var token = userToken.Replace("Bearer ", "");
+            var userId = ExtractUserIdFromToken(token);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { error = "Invalid token" });
+
+            var supabaseUrl = _config["Supabase:Url"];
+            var supabaseKey = _config["Supabase:AnonKey"];
+
+            try
+            {
+                // Parse request body
+                var outfitId = requestBody.GetProperty("outfitId").GetInt32();
+                var eventDate = requestBody.GetProperty("eventDate").GetString();
+                var eventName = requestBody.TryGetProperty("eventName", out var nameElement)
+                    ? nameElement.GetString()
+                    : null;
+                var notes = requestBody.TryGetProperty("notes", out var notesElement)
+                    ? notesElement.GetString()
+                    : null;
+
+                // Create schedule record
+                var scheduleData = new
+                {
+                    user_id = userId,
+                    outfit_id = outfitId,
+                    event_date = eventDate,
+                    event_name = eventName,
+                    notes = notes
+                };
+
+                var jsonContent = JsonSerializer.Serialize(scheduleData);
+                var request = new HttpRequestMessage(HttpMethod.Post,
+                    $"{supabaseUrl}/rest/v1/outfit_schedule")
+                {
+                    Content = new StringContent(jsonContent, Encoding.UTF8, "application/json")
+                };
+
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                request.Headers.Add("apikey", supabaseKey);
+                request.Headers.Add("Prefer", "return=representation");
+
+                var response = await _httpClient.SendAsync(request);
+                var body = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                    return StatusCode((int)response.StatusCode,
+                        new { error = "Failed to schedule outfit", details = body });
+
+                var scheduleArray = JsonDocument.Parse(body).RootElement;
+                var createdSchedule = scheduleArray[0];
+
+                return StatusCode(201, new
+                {
+                    scheduleId = createdSchedule.GetProperty("schedule_id").GetInt32(),
+                    userId = createdSchedule.GetProperty("user_id").GetString(),
+                    outfitId = createdSchedule.GetProperty("outfit_id").GetInt32(),
+                    eventDate = createdSchedule.GetProperty("event_date").GetString(),
+                    eventName = createdSchedule.TryGetProperty("event_name", out var en) ? en.GetString() : null,
+                    notes = createdSchedule.TryGetProperty("notes", out var n) ? n.GetString() : null
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = "Invalid request data", details = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Get scheduled outfits within a date range
+        /// GET /api/Calendar/scheduled?startDate=2024-01-01&endDate=2024-01-31
+        /// </summary>
+        [HttpGet("scheduled")]
+        public async Task<IActionResult> GetScheduledOutfits(
+            [FromQuery] string startDate,
+            [FromQuery] string endDate)
+        {
+            var userToken = Request.Headers["Authorization"].ToString();
+            if (string.IsNullOrEmpty(userToken))
+                return Unauthorized(new { error = "Missing token" });
+
+            var token = userToken.Replace("Bearer ", "");
+            var userId = ExtractUserIdFromToken(token);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { error = "Invalid token" });
+
+            var supabaseUrl = _config["Supabase:Url"];
+            var supabaseKey = _config["Supabase:AnonKey"];
+
+            try
+            {
+                // Query scheduled outfits with outfit details and items
+                var requestUrl = $"{supabaseUrl}/rest/v1/outfit_schedule?" +
+                    $"user_id=eq.{userId}&" +
+                    $"event_date=gte.{startDate}&" +
+                    $"event_date=lte.{endDate}&" +
+                    $"select=*,outfit:outfit_id(outfit_id,outfit_name,category,outfit_item(item_id,layout_data,item:item_id(*)))&" +
+                    $"order=event_date.asc";
+
+                var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                request.Headers.Add("apikey", supabaseKey);
+
+                var response = await _httpClient.SendAsync(request);
+                var body = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                    return StatusCode((int)response.StatusCode,
+                        new { error = "Failed to fetch scheduled outfits", details = body });
+
+                // Transform the response to match Android model structure
+                var schedules = JsonDocument.Parse(body).RootElement;
+                var transformedSchedules = new List<object>();
+
+                foreach (var schedule in schedules.EnumerateArray())
+                {
+                    var outfit = schedule.GetProperty("outfit");
+                    var outfitItems = new List<object>();
+
+                    if (outfit.TryGetProperty("outfit_item", out var items))
+                    {
+                        foreach (var outfitItem in items.EnumerateArray())
+                        {
+                            if (outfitItem.TryGetProperty("item", out var item))
+                            {
+                                outfitItems.Add(new
+                                {
+                                    itemId = item.GetProperty("item_id").GetInt32(),
+                                    name = item.TryGetProperty("item_name", out var n) ? n.GetString() : "",
+                                    imageUrl = item.TryGetProperty("image_url", out var url) ? url.GetString() : "",
+                                    category = item.TryGetProperty("category", out var cat) ? cat.GetString() : "",
+                                    subcategory = item.TryGetProperty("subcategory", out var sub) ? sub.GetString() : ""
+                                });
+                            }
+                        }
+                    }
+
+                    transformedSchedules.Add(new
+                    {
+                        scheduleId = schedule.GetProperty("schedule_id").GetInt32(),
+                        eventDate = schedule.GetProperty("event_date").GetString(),
+                        outfit = new
+                        {
+                            outfitId = outfit.GetProperty("outfit_id").GetInt32(),
+                            name = outfit.GetProperty("outfit_name").GetString(),
+                            category = outfit.TryGetProperty("category", out var c) ? c.GetString() : "",
+                            items = outfitItems
+                        },
+                        eventName = schedule.TryGetProperty("event_name", out var en) ? en.GetString() : null,
+                        notes = schedule.TryGetProperty("notes", out var nt) ? nt.GetString() : null,
+                        weather = (object?)null // Weather integration can be added later
+                    });
+                }
+
+                return Ok(transformedSchedules);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = "Invalid request", details = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Delete a scheduled outfit
+        /// DELETE /api/Calendar/schedule/{id}
+        /// </summary>
+        [HttpDelete("schedule/{id}")]
+        public async Task<IActionResult> DeleteSchedule(int id)
+        {
+            var userToken = Request.Headers["Authorization"].ToString();
+            if (string.IsNullOrEmpty(userToken))
+                return Unauthorized(new { error = "Missing token" });
+
+            var token = userToken.Replace("Bearer ", "");
+            var userId = ExtractUserIdFromToken(token);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { error = "Invalid token" });
+
+            var supabaseUrl = _config["Supabase:Url"];
+            var supabaseKey = _config["Supabase:AnonKey"];
+
+            var request = new HttpRequestMessage(HttpMethod.Delete,
+                $"{supabaseUrl}/rest/v1/outfit_schedule?schedule_id=eq.{id}&user_id=eq.{userId}");
+
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            request.Headers.Add("apikey", supabaseKey);
+
+            var response = await _httpClient.SendAsync(request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync();
+                return StatusCode((int)response.StatusCode,
+                    new { error = "Failed to delete schedule", details = body });
+            }
+
+            return Ok(new { message = "Schedule deleted successfully" });
+        }
+
+        /// <summary>
+        /// Update a scheduled outfit
+        /// PUT /api/Calendar/schedule/{id}
+        /// </summary>
+        [HttpPut("schedule/{id}")]
+        public async Task<IActionResult> UpdateSchedule(int id, [FromBody] JsonElement requestBody)
+        {
+            var userToken = Request.Headers["Authorization"].ToString();
+            if (string.IsNullOrEmpty(userToken))
+                return Unauthorized(new { error = "Missing token" });
+
+            var token = userToken.Replace("Bearer ", "");
+            var userId = ExtractUserIdFromToken(token);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { error = "Invalid token" });
+
+            var supabaseUrl = _config["Supabase:Url"];
+            var supabaseKey = _config["Supabase:AnonKey"];
+
+            try
+            {
+                var updateData = new Dictionary<string, object?>();
+
+                if (requestBody.TryGetProperty("eventDate", out var date))
+                    updateData["event_date"] = date.GetString();
+
+                if (requestBody.TryGetProperty("eventName", out var name))
+                    updateData["event_name"] = name.GetString();
+
+                if (requestBody.TryGetProperty("notes", out var notes))
+                    updateData["notes"] = notes.GetString();
+
+                if (requestBody.TryGetProperty("outfitId", out var outfitId))
+                    updateData["outfit_id"] = outfitId.GetInt32();
+
+                var jsonContent = JsonSerializer.Serialize(updateData);
+                var request = new HttpRequestMessage(HttpMethod.Patch,
+                    $"{supabaseUrl}/rest/v1/outfit_schedule?schedule_id=eq.{id}&user_id=eq.{userId}")
+                {
+                    Content = new StringContent(jsonContent, Encoding.UTF8, "application/json")
+                };
+
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                request.Headers.Add("apikey", supabaseKey);
+                request.Headers.Add("Prefer", "return=representation");
+
+                var response = await _httpClient.SendAsync(request);
+                var body = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                    return StatusCode((int)response.StatusCode,
+                        new { error = "Failed to update schedule", details = body });
+
+                return Ok(new { message = "Schedule updated successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = "Invalid request data", details = ex.Message });
+            }
+        }
+
+        private string? ExtractUserIdFromToken(string token)
+        {
+            try
+            {
+                var parts = token.Split('.');
+                if (parts.Length != 3) return null;
+
+                var payload = parts[1];
+                var paddedPayload = payload.PadRight(payload.Length + (4 - payload.Length % 4) % 4, '=');
+                var jsonBytes = Convert.FromBase64String(paddedPayload);
+                var json = Encoding.UTF8.GetString(jsonBytes);
+                var doc = JsonDocument.Parse(json);
+
+                return doc.RootElement.GetProperty("sub").GetString();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+    }
+}
