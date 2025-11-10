@@ -121,12 +121,30 @@ namespace Stylu.Controllers
 
             try
             {
-                // Query scheduled outfits with outfit details and items
+                // ✅ FIXED: Corrected query structure for Supabase PostgREST
                 var requestUrl = $"{supabaseUrl}/rest/v1/outfit_schedule?" +
                     $"user_id=eq.{userId}&" +
                     $"event_date=gte.{startDate}&" +
                     $"event_date=lte.{endDate}&" +
-                    $"select=*,outfit:outfit_id(outfit_id,outfit_name,category,outfit_item(item_id,layout_data,item:item_id(*)))&" +
+                    $"select=schedule_id,user_id,outfit_id,event_date,event_name,notes," +
+                    $"outfit:outfit_id(" +
+                        $"outfit_id," +
+                        $"outfit_name," +
+                        $"category," +
+                        $"outfit_item(" +
+                            $"item_id," +
+                            $"layout_data," +
+                            $"item:item_id(" +
+                                $"item_id," +
+                                $"item_name," +
+                                $"image_url," +
+                                $"sub_category:subcategory_id(" +
+                                    $"name," +
+                                    $"category:category_id(name)" +
+                                $")" +
+                            $")" +
+                        $")" +
+                    $")&" +
                     $"order=event_date.asc";
 
                 var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
@@ -146,22 +164,45 @@ namespace Stylu.Controllers
 
                 foreach (var schedule in schedules.EnumerateArray())
                 {
-                    var outfit = schedule.GetProperty("outfit");
+                    // Check if outfit exists
+                    if (!schedule.TryGetProperty("outfit", out var outfit) || outfit.ValueKind == JsonValueKind.Null)
+                    {
+                        continue; // Skip if outfit was deleted
+                    }
+
                     var outfitItems = new List<object>();
 
                     if (outfit.TryGetProperty("outfit_item", out var items))
                     {
                         foreach (var outfitItem in items.EnumerateArray())
                         {
-                            if (outfitItem.TryGetProperty("item", out var item))
+                            if (outfitItem.TryGetProperty("item", out var item) && item.ValueKind != JsonValueKind.Null)
                             {
+                                var categoryName = "";
+                                var subcategoryName = "";
+
+                                // Get subcategory and category names
+                                if (item.TryGetProperty("sub_category", out var subCat) && subCat.ValueKind != JsonValueKind.Null)
+                                {
+                                    subcategoryName = subCat.TryGetProperty("name", out var scName) 
+                                        ? scName.GetString() ?? "" 
+                                        : "";
+
+                                    if (subCat.TryGetProperty("category", out var cat) && cat.ValueKind != JsonValueKind.Null)
+                                    {
+                                        categoryName = cat.TryGetProperty("name", out var cName) 
+                                            ? cName.GetString() ?? "" 
+                                            : "";
+                                    }
+                                }
+
                                 outfitItems.Add(new
                                 {
                                     itemId = item.GetProperty("item_id").GetInt32(),
-                                    name = item.TryGetProperty("item_name", out var n) ? n.GetString() : "",
-                                    imageUrl = item.TryGetProperty("image_url", out var url) ? url.GetString() : "",
-                                    category = item.TryGetProperty("category", out var cat) ? cat.GetString() : "",
-                                    subcategory = item.TryGetProperty("subcategory", out var sub) ? sub.GetString() : ""
+                                    name = item.TryGetProperty("item_name", out var n) ? n.GetString() ?? "" : "",
+                                    imageUrl = item.TryGetProperty("image_url", out var url) ? url.GetString() ?? "" : "",
+                                    category = categoryName,
+                                    subcategory = subcategoryName
                                 });
                             }
                         }
@@ -174,8 +215,8 @@ namespace Stylu.Controllers
                         outfit = new
                         {
                             outfitId = outfit.GetProperty("outfit_id").GetInt32(),
-                            name = outfit.GetProperty("outfit_name").GetString(),
-                            category = outfit.TryGetProperty("category", out var c) ? c.GetString() : "",
+                            name = outfit.GetProperty("outfit_name").GetString() ?? "",
+                            category = outfit.TryGetProperty("category", out var c) ? c.GetString() ?? "" : "",
                             items = outfitItems
                         },
                         eventName = schedule.TryGetProperty("event_name", out var en) ? en.GetString() : null,
