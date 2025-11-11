@@ -192,159 +192,186 @@ public async Task<IActionResult> DebugCheckSchedules(
         /// Get scheduled outfits within a date range
         /// GET /api/Calendar/scheduled?startDate=2024-01-01&endDate=2024-01-31
         /// </summary>
-        [HttpGet("scheduled")]
-        public async Task<IActionResult> GetScheduledOutfits(
-            [FromQuery] string startDate,
-            [FromQuery] string endDate)
+       
+[HttpGet("scheduled")]
+public async Task<IActionResult> GetScheduledOutfits(
+    [FromQuery] string startDate,
+    [FromQuery] string endDate)
+{
+    var userToken = Request.Headers["Authorization"].ToString();
+    if (string.IsNullOrEmpty(userToken))
+        return Unauthorized(new { error = "Missing token" });
+
+    var token = userToken.Replace("Bearer ", "");
+    var userId = ExtractUserIdFromToken(token);
+    if (string.IsNullOrEmpty(userId))
+        return Unauthorized(new { error = "Invalid token" });
+
+    var supabaseUrl = _config["Supabase:Url"];
+    var supabaseKey = _config["Supabase:AnonKey"];
+
+    try
+    {
+        // Step 1: Get scheduled outfits
+        var scheduleUrl = $"{supabaseUrl}/rest/v1/outfit_schedule?" +
+            $"user_id=eq.{userId}&" +
+            $"event_date=gte.{startDate}&" +
+            $"event_date=lte.{endDate}&" +
+            $"select=schedule_id,user_id,outfit_id,event_date,event_name,notes&" +
+            $"order=event_date.asc";
+
+        Console.WriteLine($"📅 Step 1: Fetching schedules - {scheduleUrl}");
+
+        var scheduleRequest = new HttpRequestMessage(HttpMethod.Get, scheduleUrl);
+        scheduleRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        scheduleRequest.Headers.Add("apikey", supabaseKey);
+
+        var scheduleResponse = await _httpClient.SendAsync(scheduleRequest);
+        var scheduleBody = await scheduleResponse.Content.ReadAsStringAsync();
+
+        Console.WriteLine($"📥 Step 1 Response Code: {scheduleResponse.StatusCode}");
+        Console.WriteLine($"📥 Step 1 Response Body: {scheduleBody}");
+
+        if (!scheduleResponse.IsSuccessStatusCode)
+            return StatusCode((int)scheduleResponse.StatusCode,
+                new { error = "Failed to fetch schedules", details = scheduleBody });
+
+        var schedules = JsonDocument.Parse(scheduleBody).RootElement;
+        Console.WriteLine($"📊 Found {schedules.GetArrayLength()} schedules");
+
+        var result = new List<object>();
+
+        // Step 2: For each schedule, fetch the outfit details
+        foreach (var schedule in schedules.EnumerateArray())
         {
-            var userToken = Request.Headers["Authorization"].ToString();
-            if (string.IsNullOrEmpty(userToken))
-                return Unauthorized(new { error = "Missing token" });
-        
-            var token = userToken.Replace("Bearer ", "");
-            var userId = ExtractUserIdFromToken(token);
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized(new { error = "Invalid token" });
-        
-            var supabaseUrl = _config["Supabase:Url"];
-            var supabaseKey = _config["Supabase:AnonKey"];
-        
-            try
+            var outfitId = schedule.GetProperty("outfit_id").GetInt32();
+            Console.WriteLine($"👕 Step 2: Fetching outfit {outfitId} for user {userId}");
+
+            var outfitUrl = $"{supabaseUrl}/rest/v1/outfit?" +
+                $"outfit_id=eq.{outfitId}&" +
+                $"user_id=eq.{userId}&" +
+                $"select=outfit_id,outfit_name,category," +
+                $"outfit_item(" +
+                    $"item_id," +
+                    $"layout_data," +
+                    $"item:item_id(" +
+                        $"item_id," +
+                        $"item_name," +
+                        $"image_url," +
+                        $"colour," +
+                        $"sub_category:subcategory_id(name)" +
+                    $")" +
+                $")";
+
+            Console.WriteLine($"🔗 Outfit Query URL: {outfitUrl}");
+
+            var outfitRequest = new HttpRequestMessage(HttpMethod.Get, outfitUrl);
+            outfitRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            outfitRequest.Headers.Add("apikey", supabaseKey);
+
+            var outfitResponse = await _httpClient.SendAsync(outfitRequest);
+            var outfitBody = await outfitResponse.Content.ReadAsStringAsync();
+
+            Console.WriteLine($"📥 Outfit Response Code: {outfitResponse.StatusCode}");
+            Console.WriteLine($"📥 Outfit Response Body: {outfitBody}");
+
+            if (!outfitResponse.IsSuccessStatusCode)
             {
-                // Step 1: Get scheduled outfits
-                var scheduleUrl = $"{supabaseUrl}/rest/v1/outfit_schedule?" +
-                    $"user_id=eq.{userId}&" +
-                    $"event_date=gte.{startDate}&" +
-                    $"event_date=lte.{endDate}&" +
-                    $"select=schedule_id,user_id,outfit_id,event_date,event_name,notes&" +
-                    $"order=event_date.asc";
-        
-                var scheduleRequest = new HttpRequestMessage(HttpMethod.Get, scheduleUrl);
-                scheduleRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                scheduleRequest.Headers.Add("apikey", supabaseKey);
-        
-                var scheduleResponse = await _httpClient.SendAsync(scheduleRequest);
-                var scheduleBody = await scheduleResponse.Content.ReadAsStringAsync();
-        
-                if (!scheduleResponse.IsSuccessStatusCode)
-                    return StatusCode((int)scheduleResponse.StatusCode,
-                        new { error = "Failed to fetch schedules", details = scheduleBody });
-        
-                var schedules = JsonDocument.Parse(scheduleBody).RootElement;
-                var result = new List<object>();
-        
-                // Step 2: For each schedule, fetch the outfit details
-                foreach (var schedule in schedules.EnumerateArray())
+                Console.WriteLine($"❌ Failed to fetch outfit {outfitId}: {outfitBody}");
+                continue; // Skip if outfit not found or deleted
+            }
+
+            var outfits = JsonDocument.Parse(outfitBody).RootElement;
+            if (outfits.GetArrayLength() == 0)
+            {
+                Console.WriteLine($"⚠️ No outfit found with ID {outfitId} for user {userId}");
+                continue; // Skip if no outfit found
+            }
+
+            var outfit = outfits[0];
+            var items = new List<object>();
+
+            // Parse outfit items
+            if (outfit.TryGetProperty("outfit_item", out var outfitItems))
+            {
+                Console.WriteLine($"🎨 Processing {outfitItems.GetArrayLength()} items");
+                
+                foreach (var outfitItem in outfitItems.EnumerateArray())
                 {
-                    var outfitId = schedule.GetProperty("outfit_id").GetInt32();
-        
-                    // ✅ CORRECTED: Now properly joins to get subcategory NAME
-                    var outfitUrl = $"{supabaseUrl}/rest/v1/outfit?" +
-                        $"outfit_id=eq.{outfitId}&" +
-                        $"user_id=eq.{userId}&" +
-                        $"select=outfit_id,outfit_name,category," +
-                        $"outfit_item(" +
-                            $"item_id," +
-                            $"layout_data," +
-                            $"item:item_id(" +
-                                $"item_id," +
-                                $"item_name," +
-                                $"image_url," +
-                                $"colour," +
-                                $"sub_category:subcategory_id(name)" +  // ✅ Get subcategory name
-                            $")" +
-                        $")";
-        
-                    var outfitRequest = new HttpRequestMessage(HttpMethod.Get, outfitUrl);
-                    outfitRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                    outfitRequest.Headers.Add("apikey", supabaseKey);
-        
-                    var outfitResponse = await _httpClient.SendAsync(outfitRequest);
-                    var outfitBody = await outfitResponse.Content.ReadAsStringAsync();
-        
-                    if (!outfitResponse.IsSuccessStatusCode)
+                    if (outfitItem.TryGetProperty("item", out var item) && 
+                        item.ValueKind != JsonValueKind.Null)
                     {
-                        Console.WriteLine($"Failed to fetch outfit {outfitId}: {outfitBody}");
-                        continue; // Skip if outfit not found or deleted
-                    }
-        
-                    var outfits = JsonDocument.Parse(outfitBody).RootElement;
-                    if (outfits.GetArrayLength() == 0)
-                        continue; // Skip if no outfit found
-        
-                    var outfit = outfits[0];
-                    var items = new List<object>();
-        
-                    // Parse outfit items
-                    if (outfit.TryGetProperty("outfit_item", out var outfitItems))
-                    {
-                        foreach (var outfitItem in outfitItems.EnumerateArray())
+                        // Get subcategory name from nested object
+                        var subcategoryName = "";
+                        if (item.TryGetProperty("sub_category", out var subCat) && 
+                            subCat.ValueKind != JsonValueKind.Null)
                         {
-                            if (outfitItem.TryGetProperty("item", out var item) && 
-                                item.ValueKind != JsonValueKind.Null)
-                            {
-                                // Get subcategory name from nested object
-                                var subcategoryName = "";
-                                if (item.TryGetProperty("sub_category", out var subCat) && 
-                                    subCat.ValueKind != JsonValueKind.Null)
-                                {
-                                    subcategoryName = subCat.TryGetProperty("name", out var scName) 
-                                        ? scName.GetString() ?? "" 
-                                        : "";
-                                }
-        
-                                // Parse layoutData if present
-                                object? layoutDataObj = null;
-                                if (outfitItem.TryGetProperty("layout_data", out var ld) && 
-                                    ld.ValueKind != JsonValueKind.Null)
-                                {
-                                    layoutDataObj = new
-                                    {
-                                        x = ld.TryGetProperty("x", out var x) ? x.GetDouble() : 0.0,
-                                        y = ld.TryGetProperty("y", out var y) ? y.GetDouble() : 0.0,
-                                        scale = ld.TryGetProperty("scale", out var scale) ? scale.GetDouble() : 1.0,
-                                        width = ld.TryGetProperty("width", out var w) ? w.GetInt32() : 100,
-                                        height = ld.TryGetProperty("height", out var h) ? h.GetInt32() : 100
-                                    };
-                                }
-        
-                                items.Add(new
-                                {
-                                    itemId = item.GetProperty("item_id").GetInt32(),
-                                    name = item.TryGetProperty("item_name", out var n) ? n.GetString() ?? "" : "",
-                                    imageUrl = item.TryGetProperty("image_url", out var url) ? url.GetString() ?? "" : "",
-                                    colour = item.TryGetProperty("colour", out var col) ? col.GetString() : null,
-                                    subcategory = subcategoryName,  // ✅ Now returns name as string
-                                    layoutData = layoutDataObj
-                                });
-                            }
+                            subcategoryName = subCat.TryGetProperty("name", out var scName) 
+                                ? scName.GetString() ?? "" 
+                                : "";
                         }
-                    }
-        
-                    result.Add(new
-                    {
-                        scheduleId = schedule.GetProperty("schedule_id").GetInt32(),
-                        eventDate = schedule.GetProperty("event_date").GetString(),
-                        outfit = new
+
+                        // Parse layoutData if present
+                        object? layoutDataObj = null;
+                        if (outfitItem.TryGetProperty("layout_data", out var ld) && 
+                            ld.ValueKind != JsonValueKind.Null)
                         {
-                            outfitId = outfit.GetProperty("outfit_id").GetInt32(),
-                            name = outfit.GetProperty("outfit_name").GetString() ?? "",
-                            category = outfit.TryGetProperty("category", out var cat) ? cat.GetString() ?? "" : "",
-                            items = items
-                        },
-                        eventName = schedule.TryGetProperty("event_name", out var en) ? en.GetString() : null,
-                        notes = schedule.TryGetProperty("notes", out var nt) ? nt.GetString() : null,
-                        weather = (object?)null
-                    });
+                            layoutDataObj = new
+                            {
+                                x = ld.TryGetProperty("x", out var x) ? x.GetDouble() : 0.0,
+                                y = ld.TryGetProperty("y", out var y) ? y.GetDouble() : 0.0,
+                                scale = ld.TryGetProperty("scale", out var scale) ? scale.GetDouble() : 1.0,
+                                width = ld.TryGetProperty("width", out var w) ? w.GetInt32() : 100,
+                                height = ld.TryGetProperty("height", out var h) ? h.GetInt32() : 100
+                            };
+                        }
+
+                        items.Add(new
+                        {
+                            itemId = item.GetProperty("item_id").GetInt32(),
+                            name = item.TryGetProperty("item_name", out var n) ? n.GetString() ?? "" : "",
+                            imageUrl = item.TryGetProperty("image_url", out var url) ? url.GetString() ?? "" : "",
+                            colour = item.TryGetProperty("colour", out var col) ? col.GetString() : null,
+                            subcategory = subcategoryName,
+                            layoutData = layoutDataObj
+                        });
+                    }
                 }
-        
-                return Ok(result);
             }
-            catch (Exception ex)
+            else
             {
-                return BadRequest(new { error = "Invalid request", details = ex.Message });
+                Console.WriteLine($"⚠️ Outfit {outfitId} has no outfit_item array");
             }
+
+            Console.WriteLine($"✅ Successfully processed outfit {outfitId} with {items.Count} items");
+
+            result.Add(new
+            {
+                scheduleId = schedule.GetProperty("schedule_id").GetInt32(),
+                eventDate = schedule.GetProperty("event_date").GetString(),
+                outfit = new
+                {
+                    outfitId = outfit.GetProperty("outfit_id").GetInt32(),
+                    name = outfit.GetProperty("outfit_name").GetString() ?? "",
+                    category = outfit.TryGetProperty("category", out var cat) ? cat.GetString() ?? "" : "",
+                    items = items
+                },
+                eventName = schedule.TryGetProperty("event_name", out var en) ? en.GetString() : null,
+                notes = schedule.TryGetProperty("notes", out var nt) ? nt.GetString() : null,
+                weather = (object?)null
+            });
         }
+
+        Console.WriteLine($"🎉 Returning {result.Count} scheduled outfits");
+        return Ok(result);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ EXCEPTION: {ex.Message}");
+        Console.WriteLine($"Stack trace: {ex.StackTrace}");
+        return BadRequest(new { error = "Invalid request", details = ex.Message });
+    }
+}
 
 
         
