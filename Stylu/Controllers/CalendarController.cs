@@ -104,111 +104,95 @@ namespace Stylu.Controllers
         /// </summary>
         [HttpGet("scheduled")]
         public async Task<IActionResult> GetScheduledOutfits(
-            [FromQuery] string startDate,
-            [FromQuery] string endDate)
+        [FromQuery] string startDate,
+        [FromQuery] string endDate)
         {
             var userToken = Request.Headers["Authorization"].ToString();
             if (string.IsNullOrEmpty(userToken))
                 return Unauthorized(new { error = "Missing token" });
-
+        
             var token = userToken.Replace("Bearer ", "");
             var userId = ExtractUserIdFromToken(token);
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized(new { error = "Invalid token" });
-
+        
             var supabaseUrl = _config["Supabase:Url"];
             var supabaseKey = _config["Supabase:AnonKey"];
-
+        
             try
             {
-                // ✅ FIXED: Corrected query structure for Supabase PostgREST
-                var requestUrl = $"{supabaseUrl}/rest/v1/outfit_schedule?" +
+                // Step 1: Get scheduled outfits
+                var scheduleUrl = $"{supabaseUrl}/rest/v1/outfit_schedule?" +
                     $"user_id=eq.{userId}&" +
                     $"event_date=gte.{startDate}&" +
                     $"event_date=lte.{endDate}&" +
-                    $"select=schedule_id,user_id,outfit_id,event_date,event_name,notes," +
-                    $"outfit:outfit_id(" +
-                        $"outfit_id," +
-                        $"outfit_name," +
-                        $"category," +
-                        $"outfit_item(" +
-                            $"item_id," +
-                            $"layout_data," +
-                            $"item:item_id(" +
-                                $"item_id," +
-                                $"item_name," +
-                                $"image_url," +
-                                $"sub_category:subcategory_id(" +
-                                    $"name," +
-                                    $"category:category_id(name)" +
-                                $")" +
-                            $")" +
-                        $")" +
-                    $")&" +
+                    $"select=schedule_id,user_id,outfit_id,event_date,event_name,notes&" +
                     $"order=event_date.asc";
-
-                var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                request.Headers.Add("apikey", supabaseKey);
-
-                var response = await _httpClient.SendAsync(request);
-                var body = await response.Content.ReadAsStringAsync();
-
-                if (!response.IsSuccessStatusCode)
-                    return StatusCode((int)response.StatusCode,
-                        new { error = "Failed to fetch scheduled outfits", details = body });
-
-                // Transform the response to match Android model structure
-                var schedules = JsonDocument.Parse(body).RootElement;
-                var transformedSchedules = new List<object>();
-
+        
+                var scheduleRequest = new HttpRequestMessage(HttpMethod.Get, scheduleUrl);
+                scheduleRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                scheduleRequest.Headers.Add("apikey", supabaseKey);
+        
+                var scheduleResponse = await _httpClient.SendAsync(scheduleRequest);
+                var scheduleBody = await scheduleResponse.Content.ReadAsStringAsync();
+        
+                if (!scheduleResponse.IsSuccessStatusCode)
+                    return StatusCode((int)scheduleResponse.StatusCode,
+                        new { error = "Failed to fetch schedules", details = scheduleBody });
+        
+                var schedules = JsonDocument.Parse(scheduleBody).RootElement;
+                var result = new List<object>();
+        
+                // Step 2: For each schedule, fetch the outfit details
                 foreach (var schedule in schedules.EnumerateArray())
                 {
-                    // Check if outfit exists
-                    if (!schedule.TryGetProperty("outfit", out var outfit) || outfit.ValueKind == JsonValueKind.Null)
+                    var outfitId = schedule.GetProperty("outfit_id").GetInt32();
+        
+                    // Fetch outfit with items
+                    var outfitUrl = $"{supabaseUrl}/rest/v1/outfit?" +
+                        $"outfit_id=eq.{outfitId}&" +
+                        $"user_id=eq.{userId}&" +
+                        $"select=outfit_id,outfit_name,category,outfit_item(item_id,layout_data,item(item_id,item_name,image_url,colour,subcategory_id))";
+        
+                    var outfitRequest = new HttpRequestMessage(HttpMethod.Get, outfitUrl);
+                    outfitRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                    outfitRequest.Headers.Add("apikey", supabaseKey);
+        
+                    var outfitResponse = await _httpClient.SendAsync(outfitRequest);
+                    var outfitBody = await outfitResponse.Content.ReadAsStringAsync();
+        
+                    if (!outfitResponse.IsSuccessStatusCode)
+                        continue; // Skip if outfit not found or deleted
+        
+                    var outfits = JsonDocument.Parse(outfitBody).RootElement;
+                    if (outfits.GetArrayLength() == 0)
+                        continue; // Skip if no outfit found
+        
+                    var outfit = outfits[0];
+                    var items = new List<object>();
+        
+                    // Parse outfit items
+                    if (outfit.TryGetProperty("outfit_item", out var outfitItems))
                     {
-                        continue; // Skip if outfit was deleted
-                    }
-
-                    var outfitItems = new List<object>();
-
-                    if (outfit.TryGetProperty("outfit_item", out var items))
-                    {
-                        foreach (var outfitItem in items.EnumerateArray())
+                        foreach (var outfitItem in outfitItems.EnumerateArray())
                         {
-                            if (outfitItem.TryGetProperty("item", out var item) && item.ValueKind != JsonValueKind.Null)
+                            if (outfitItem.TryGetProperty("item", out var item) && 
+                                item.ValueKind != JsonValueKind.Null)
                             {
-                                var categoryName = "";
-                                var subcategoryName = "";
-
-                                // Get subcategory and category names
-                                if (item.TryGetProperty("sub_category", out var subCat) && subCat.ValueKind != JsonValueKind.Null)
-                                {
-                                    subcategoryName = subCat.TryGetProperty("name", out var scName) 
-                                        ? scName.GetString() ?? "" 
-                                        : "";
-
-                                    if (subCat.TryGetProperty("category", out var cat) && cat.ValueKind != JsonValueKind.Null)
-                                    {
-                                        categoryName = cat.TryGetProperty("name", out var cName) 
-                                            ? cName.GetString() ?? "" 
-                                            : "";
-                                    }
-                                }
-
-                                outfitItems.Add(new
+                                items.Add(new
                                 {
                                     itemId = item.GetProperty("item_id").GetInt32(),
                                     name = item.TryGetProperty("item_name", out var n) ? n.GetString() ?? "" : "",
                                     imageUrl = item.TryGetProperty("image_url", out var url) ? url.GetString() ?? "" : "",
-                                    category = categoryName,
-                                    subcategory = subcategoryName
+                                    colour = item.TryGetProperty("colour", out var col) ? col.GetString() : null,
+                                    subcategory = item.TryGetProperty("subcategory_id", out var sub) ? sub.GetInt32().ToString() : "",
+                                    layoutData = outfitItem.TryGetProperty("layout_data", out var ld) ? ld : (JsonElement?)null
                                 });
                             }
                         }
                     }
-
-                    transformedSchedules.Add(new
+        
+                    result.Add(new
                     {
                         scheduleId = schedule.GetProperty("schedule_id").GetInt32(),
                         eventDate = schedule.GetProperty("event_date").GetString(),
@@ -216,23 +200,22 @@ namespace Stylu.Controllers
                         {
                             outfitId = outfit.GetProperty("outfit_id").GetInt32(),
                             name = outfit.GetProperty("outfit_name").GetString() ?? "",
-                            category = outfit.TryGetProperty("category", out var c) ? c.GetString() ?? "" : "",
-                            items = outfitItems
+                            category = outfit.TryGetProperty("category", out var cat) ? cat.GetString() ?? "" : "",
+                            items = items
                         },
                         eventName = schedule.TryGetProperty("event_name", out var en) ? en.GetString() : null,
                         notes = schedule.TryGetProperty("notes", out var nt) ? nt.GetString() : null,
-                        weather = (object?)null // Weather integration can be added later
+                        weather = (object?)null
                     });
                 }
-
-                return Ok(transformedSchedules);
+        
+                return Ok(result);
             }
             catch (Exception ex)
             {
                 return BadRequest(new { error = "Invalid request", details = ex.Message });
             }
         }
-
         /// <summary>
         /// Delete a scheduled outfit
         /// DELETE /api/Calendar/schedule/{id}
