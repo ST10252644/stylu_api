@@ -19,94 +19,95 @@ namespace Stylu.Controllers
             _httpClient = httpClient;
             _config = config;
         }
-[HttpGet("debug/check-schedules")]
-public async Task<IActionResult> DebugCheckSchedules(
-    [FromQuery] string? startDate = null,
-    [FromQuery] string? endDate = null)
-{
-    var userToken = Request.Headers["Authorization"].ToString();
-    if (string.IsNullOrEmpty(userToken))
-        return Unauthorized(new { error = "Missing token" });
-
-    var token = userToken.Replace("Bearer ", "");
-    var userId = ExtractUserIdFromToken(token);
-    if (string.IsNullOrEmpty(userId))
-        return Unauthorized(new { error = "Invalid token" });
-
-    var supabaseUrl = _config["Supabase:Url"];
-    var supabaseKey = _config["Supabase:AnonKey"];
-
-    try
-    {
-        // Query 1: Get ALL schedules for this user (no date filter)
-        var allSchedulesUrl = $"{supabaseUrl}/rest/v1/outfit_schedule?" +
-            $"user_id=eq.{userId}&" +
-            $"select=schedule_id,user_id,outfit_id,event_date,event_name,notes&" +
-            $"order=event_date.asc";
-
-        var allSchedulesRequest = new HttpRequestMessage(HttpMethod.Get, allSchedulesUrl);
-        allSchedulesRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        allSchedulesRequest.Headers.Add("apikey", supabaseKey);
-
-        var allSchedulesResponse = await _httpClient.SendAsync(allSchedulesRequest);
-        var allSchedulesBody = await allSchedulesResponse.Content.ReadAsStringAsync();
-
-        var debugInfo = new
+        
+        [HttpGet("debug/check-schedules")]
+        public async Task<IActionResult> DebugCheckSchedules(
+            [FromQuery] string? startDate = null,
+            [FromQuery] string? endDate = null)
         {
-            userId = userId,
-            queriedStartDate = startDate ?? "not specified",
-            queriedEndDate = endDate ?? "not specified",
-            allSchedulesQuery = allSchedulesUrl,
-            allSchedulesStatusCode = (int)allSchedulesResponse.StatusCode,
-            allSchedulesCount = allSchedulesResponse.IsSuccessStatusCode 
-                ? JsonDocument.Parse(allSchedulesBody).RootElement.GetArrayLength() 
-                : 0,
-            allSchedulesData = allSchedulesResponse.IsSuccessStatusCode 
-                ? JsonDocument.Parse(allSchedulesBody).RootElement 
-                : JsonDocument.Parse("[]").RootElement
-        };
-
-        // Query 2: If dates specified, query with date filter
-        if (!string.IsNullOrEmpty(startDate) && !string.IsNullOrEmpty(endDate))
-        {
-            var filteredUrl = $"{supabaseUrl}/rest/v1/outfit_schedule?" +
-                $"user_id=eq.{userId}&" +
-                $"event_date=gte.{startDate}&" +
-                $"event_date=lte.{endDate}&" +
-                $"select=schedule_id,user_id,outfit_id,event_date,event_name,notes&" +
-                $"order=event_date.asc";
-
-            var filteredRequest = new HttpRequestMessage(HttpMethod.Get, filteredUrl);
-            filteredRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            filteredRequest.Headers.Add("apikey", supabaseKey);
-
-            var filteredResponse = await _httpClient.SendAsync(filteredRequest);
-            var filteredBody = await filteredResponse.Content.ReadAsStringAsync();
-
-            return Ok(new
+            var userToken = Request.Headers["Authorization"].ToString();
+            if (string.IsNullOrEmpty(userToken))
+                return Unauthorized(new { error = "Missing token" });
+        
+            var token = userToken.Replace("Bearer ", "");
+            var userId = ExtractUserIdFromToken(token);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { error = "Invalid token" });
+        
+            var supabaseUrl = _config["Supabase:Url"];
+            var supabaseKey = _config["Supabase:AnonKey"];
+        
+            try
             {
-                debugInfo,
-                filteredQuery = new
+                // Query 1: Get ALL schedules for this user (no date filter)
+                var allSchedulesUrl = $"{supabaseUrl}/rest/v1/outfit_schedule?" +
+                    $"user_id=eq.{userId}&" +
+                    $"select=schedule_id,user_id,outfit_id,event_date,event_name,notes&" +
+                    $"order=event_date.asc";
+        
+                var allSchedulesRequest = new HttpRequestMessage(HttpMethod.Get, allSchedulesUrl);
+                allSchedulesRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                allSchedulesRequest.Headers.Add("apikey", supabaseKey);
+        
+                var allSchedulesResponse = await _httpClient.SendAsync(allSchedulesRequest);
+                var allSchedulesBody = await allSchedulesResponse.Content.ReadAsStringAsync();
+        
+                var debugInfo = new
                 {
-                    url = filteredUrl,
-                    statusCode = (int)filteredResponse.StatusCode,
-                    matchCount = filteredResponse.IsSuccessStatusCode
-                        ? JsonDocument.Parse(filteredBody).RootElement.GetArrayLength()
+                    userId = userId,
+                    queriedStartDate = startDate ?? "not specified",
+                    queriedEndDate = endDate ?? "not specified",
+                    allSchedulesQuery = allSchedulesUrl,
+                    allSchedulesStatusCode = (int)allSchedulesResponse.StatusCode,
+                    allSchedulesCount = allSchedulesResponse.IsSuccessStatusCode 
+                        ? JsonDocument.Parse(allSchedulesBody).RootElement.GetArrayLength() 
                         : 0,
-                    data = filteredResponse.IsSuccessStatusCode
-                        ? JsonDocument.Parse(filteredBody).RootElement
+                    allSchedulesData = allSchedulesResponse.IsSuccessStatusCode 
+                        ? JsonDocument.Parse(allSchedulesBody).RootElement 
                         : JsonDocument.Parse("[]").RootElement
+                };
+        
+                // Query 2: If dates specified, query with date filter
+                if (!string.IsNullOrEmpty(startDate) && !string.IsNullOrEmpty(endDate))
+                {
+                    var filteredUrl = $"{supabaseUrl}/rest/v1/outfit_schedule?" +
+                        $"user_id=eq.{userId}&" +
+                        $"event_date=gte.{startDate}&" +
+                        $"event_date=lte.{endDate}&" +
+                        $"select=schedule_id,user_id,outfit_id,event_date,event_name,notes&" +
+                        $"order=event_date.asc";
+        
+                    var filteredRequest = new HttpRequestMessage(HttpMethod.Get, filteredUrl);
+                    filteredRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                    filteredRequest.Headers.Add("apikey", supabaseKey);
+        
+                    var filteredResponse = await _httpClient.SendAsync(filteredRequest);
+                    var filteredBody = await filteredResponse.Content.ReadAsStringAsync();
+        
+                    return Ok(new
+                    {
+                        debugInfo,
+                        filteredQuery = new
+                        {
+                            url = filteredUrl,
+                            statusCode = (int)filteredResponse.StatusCode,
+                            matchCount = filteredResponse.IsSuccessStatusCode
+                                ? JsonDocument.Parse(filteredBody).RootElement.GetArrayLength()
+                                : 0,
+                            data = filteredResponse.IsSuccessStatusCode
+                                ? JsonDocument.Parse(filteredBody).RootElement
+                                : JsonDocument.Parse("[]").RootElement
+                        }
+                    });
                 }
-            });
+        
+                return Ok(debugInfo);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = "Debug query failed", details = ex.Message, stackTrace = ex.StackTrace });
+            }
         }
-
-        return Ok(debugInfo);
-    }
-    catch (Exception ex)
-    {
-        return BadRequest(new { error = "Debug query failed", details = ex.Message, stackTrace = ex.StackTrace });
-    }
-}
 
 
 
@@ -220,8 +221,6 @@ public async Task<IActionResult> GetScheduledOutfits(
             $"select=schedule_id,user_id,outfit_id,event_date,event_name,notes&" +
             $"order=event_date.asc";
 
-        Console.WriteLine($"📅 Step 1: Fetching schedules - {scheduleUrl}");
-
         var scheduleRequest = new HttpRequestMessage(HttpMethod.Get, scheduleUrl);
         scheduleRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         scheduleRequest.Headers.Add("apikey", supabaseKey);
@@ -229,24 +228,19 @@ public async Task<IActionResult> GetScheduledOutfits(
         var scheduleResponse = await _httpClient.SendAsync(scheduleRequest);
         var scheduleBody = await scheduleResponse.Content.ReadAsStringAsync();
 
-        Console.WriteLine($"📥 Step 1 Response Code: {scheduleResponse.StatusCode}");
-        Console.WriteLine($"📥 Step 1 Response Body: {scheduleBody}");
-
         if (!scheduleResponse.IsSuccessStatusCode)
             return StatusCode((int)scheduleResponse.StatusCode,
                 new { error = "Failed to fetch schedules", details = scheduleBody });
 
         var schedules = JsonDocument.Parse(scheduleBody).RootElement;
-        Console.WriteLine($"📊 Found {schedules.GetArrayLength()} schedules");
-
         var result = new List<object>();
 
         // Step 2: For each schedule, fetch the outfit details
         foreach (var schedule in schedules.EnumerateArray())
         {
             var outfitId = schedule.GetProperty("outfit_id").GetInt32();
-            Console.WriteLine($"👕 Step 2: Fetching outfit {outfitId} for user {userId}");
 
+            // ✅ FIXED: Changed item_name to name
             var outfitUrl = $"{supabaseUrl}/rest/v1/outfit?" +
                 $"outfit_id=eq.{outfitId}&" +
                 $"user_id=eq.{userId}&" +
@@ -256,14 +250,12 @@ public async Task<IActionResult> GetScheduledOutfits(
                     $"layout_data," +
                     $"item:item_id(" +
                         $"item_id," +
-                        $"item_name," +
+                        $"name," +  // ✅ Changed from item_name to name
                         $"image_url," +
                         $"colour," +
                         $"sub_category:subcategory_id(name)" +
                     $")" +
                 $")";
-
-            Console.WriteLine($"🔗 Outfit Query URL: {outfitUrl}");
 
             var outfitRequest = new HttpRequestMessage(HttpMethod.Get, outfitUrl);
             outfitRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -272,21 +264,15 @@ public async Task<IActionResult> GetScheduledOutfits(
             var outfitResponse = await _httpClient.SendAsync(outfitRequest);
             var outfitBody = await outfitResponse.Content.ReadAsStringAsync();
 
-            Console.WriteLine($"📥 Outfit Response Code: {outfitResponse.StatusCode}");
-            Console.WriteLine($"📥 Outfit Response Body: {outfitBody}");
-
             if (!outfitResponse.IsSuccessStatusCode)
             {
                 Console.WriteLine($"❌ Failed to fetch outfit {outfitId}: {outfitBody}");
-                continue; // Skip if outfit not found or deleted
+                continue;
             }
 
             var outfits = JsonDocument.Parse(outfitBody).RootElement;
             if (outfits.GetArrayLength() == 0)
-            {
-                Console.WriteLine($"⚠️ No outfit found with ID {outfitId} for user {userId}");
-                continue; // Skip if no outfit found
-            }
+                continue;
 
             var outfit = outfits[0];
             var items = new List<object>();
@@ -294,14 +280,12 @@ public async Task<IActionResult> GetScheduledOutfits(
             // Parse outfit items
             if (outfit.TryGetProperty("outfit_item", out var outfitItems))
             {
-                Console.WriteLine($"🎨 Processing {outfitItems.GetArrayLength()} items");
-                
                 foreach (var outfitItem in outfitItems.EnumerateArray())
                 {
                     if (outfitItem.TryGetProperty("item", out var item) && 
                         item.ValueKind != JsonValueKind.Null)
                     {
-                        // Get subcategory name from nested object
+                        // Get subcategory name
                         var subcategoryName = "";
                         if (item.TryGetProperty("sub_category", out var subCat) && 
                             subCat.ValueKind != JsonValueKind.Null)
@@ -311,7 +295,7 @@ public async Task<IActionResult> GetScheduledOutfits(
                                 : "";
                         }
 
-                        // Parse layoutData if present
+                        // Parse layoutData
                         object? layoutDataObj = null;
                         if (outfitItem.TryGetProperty("layout_data", out var ld) && 
                             ld.ValueKind != JsonValueKind.Null)
@@ -329,7 +313,7 @@ public async Task<IActionResult> GetScheduledOutfits(
                         items.Add(new
                         {
                             itemId = item.GetProperty("item_id").GetInt32(),
-                            name = item.TryGetProperty("item_name", out var n) ? n.GetString() ?? "" : "",
+                            name = item.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "",  // ✅ Reading from name column
                             imageUrl = item.TryGetProperty("image_url", out var url) ? url.GetString() ?? "" : "",
                             colour = item.TryGetProperty("colour", out var col) ? col.GetString() : null,
                             subcategory = subcategoryName,
@@ -338,12 +322,6 @@ public async Task<IActionResult> GetScheduledOutfits(
                     }
                 }
             }
-            else
-            {
-                Console.WriteLine($"⚠️ Outfit {outfitId} has no outfit_item array");
-            }
-
-            Console.WriteLine($"✅ Successfully processed outfit {outfitId} with {items.Count} items");
 
             result.Add(new
             {
@@ -362,17 +340,13 @@ public async Task<IActionResult> GetScheduledOutfits(
             });
         }
 
-        Console.WriteLine($"🎉 Returning {result.Count} scheduled outfits");
         return Ok(result);
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"❌ EXCEPTION: {ex.Message}");
-        Console.WriteLine($"Stack trace: {ex.StackTrace}");
         return BadRequest(new { error = "Invalid request", details = ex.Message });
     }
 }
-
 
         
         /// <summary>
