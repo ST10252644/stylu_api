@@ -240,17 +240,17 @@ public async Task<IActionResult> GetScheduledOutfits(
         {
             var outfitId = schedule.GetProperty("outfit_id").GetInt32();
 
-            // ✅ FIXED: Changed item_name to name
+            // ✅ FIXED: Removed category from outfit query
             var outfitUrl = $"{supabaseUrl}/rest/v1/outfit?" +
                 $"outfit_id=eq.{outfitId}&" +
                 $"user_id=eq.{userId}&" +
-                $"select=outfit_id,outfit_name,category," +
+                $"select=outfit_id,outfit_name," +  // ✅ Removed category
                 $"outfit_item(" +
                     $"item_id," +
                     $"layout_data," +
                     $"item:item_id(" +
                         $"item_id," +
-                        $"name," +  // ✅ Changed from item_name to name
+                        $"name," +
                         $"image_url," +
                         $"colour," +
                         $"sub_category:subcategory_id(name)" +
@@ -313,7 +313,7 @@ public async Task<IActionResult> GetScheduledOutfits(
                         items.Add(new
                         {
                             itemId = item.GetProperty("item_id").GetInt32(),
-                            name = item.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "",  // ✅ Reading from name column
+                            name = item.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "",
                             imageUrl = item.TryGetProperty("image_url", out var url) ? url.GetString() ?? "" : "",
                             colour = item.TryGetProperty("colour", out var col) ? col.GetString() : null,
                             subcategory = subcategoryName,
@@ -331,7 +331,7 @@ public async Task<IActionResult> GetScheduledOutfits(
                 {
                     outfitId = outfit.GetProperty("outfit_id").GetInt32(),
                     name = outfit.GetProperty("outfit_name").GetString() ?? "",
-                    category = outfit.TryGetProperty("category", out var cat) ? cat.GetString() ?? "" : "",
+                    category = "",  // ✅ Always empty since outfit table has no category
                     items = items
                 },
                 eventName = schedule.TryGetProperty("event_name", out var en) ? en.GetString() : null,
@@ -347,7 +347,6 @@ public async Task<IActionResult> GetScheduledOutfits(
         return BadRequest(new { error = "Invalid request", details = ex.Message });
     }
 }
-
         
         /// <summary>
         /// Delete a scheduled outfit
