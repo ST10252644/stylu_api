@@ -19,6 +19,96 @@ namespace Stylu.Controllers
             _httpClient = httpClient;
             _config = config;
         }
+[HttpGet("debug/check-schedules")]
+public async Task<IActionResult> DebugCheckSchedules(
+    [FromQuery] string? startDate = null,
+    [FromQuery] string? endDate = null)
+{
+    var userToken = Request.Headers["Authorization"].ToString();
+    if (string.IsNullOrEmpty(userToken))
+        return Unauthorized(new { error = "Missing token" });
+
+    var token = userToken.Replace("Bearer ", "");
+    var userId = ExtractUserIdFromToken(token);
+    if (string.IsNullOrEmpty(userId))
+        return Unauthorized(new { error = "Invalid token" });
+
+    var supabaseUrl = _config["Supabase:Url"];
+    var supabaseKey = _config["Supabase:AnonKey"];
+
+    try
+    {
+        // Query 1: Get ALL schedules for this user (no date filter)
+        var allSchedulesUrl = $"{supabaseUrl}/rest/v1/outfit_schedule?" +
+            $"user_id=eq.{userId}&" +
+            $"select=schedule_id,user_id,outfit_id,event_date,event_name,notes&" +
+            $"order=event_date.asc";
+
+        var allSchedulesRequest = new HttpRequestMessage(HttpMethod.Get, allSchedulesUrl);
+        allSchedulesRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        allSchedulesRequest.Headers.Add("apikey", supabaseKey);
+
+        var allSchedulesResponse = await _httpClient.SendAsync(allSchedulesRequest);
+        var allSchedulesBody = await allSchedulesResponse.Content.ReadAsStringAsync();
+
+        var debugInfo = new
+        {
+            userId = userId,
+            queriedStartDate = startDate ?? "not specified",
+            queriedEndDate = endDate ?? "not specified",
+            allSchedulesQuery = allSchedulesUrl,
+            allSchedulesStatusCode = (int)allSchedulesResponse.StatusCode,
+            allSchedulesCount = allSchedulesResponse.IsSuccessStatusCode 
+                ? JsonDocument.Parse(allSchedulesBody).RootElement.GetArrayLength() 
+                : 0,
+            allSchedulesData = allSchedulesResponse.IsSuccessStatusCode 
+                ? JsonDocument.Parse(allSchedulesBody).RootElement 
+                : JsonDocument.Parse("[]").RootElement
+        };
+
+        // Query 2: If dates specified, query with date filter
+        if (!string.IsNullOrEmpty(startDate) && !string.IsNullOrEmpty(endDate))
+        {
+            var filteredUrl = $"{supabaseUrl}/rest/v1/outfit_schedule?" +
+                $"user_id=eq.{userId}&" +
+                $"event_date=gte.{startDate}&" +
+                $"event_date=lte.{endDate}&" +
+                $"select=schedule_id,user_id,outfit_id,event_date,event_name,notes&" +
+                $"order=event_date.asc";
+
+            var filteredRequest = new HttpRequestMessage(HttpMethod.Get, filteredUrl);
+            filteredRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            filteredRequest.Headers.Add("apikey", supabaseKey);
+
+            var filteredResponse = await _httpClient.SendAsync(filteredRequest);
+            var filteredBody = await filteredResponse.Content.ReadAsStringAsync();
+
+            return Ok(new
+            {
+                debugInfo,
+                filteredQuery = new
+                {
+                    url = filteredUrl,
+                    statusCode = (int)filteredResponse.StatusCode,
+                    matchCount = filteredResponse.IsSuccessStatusCode
+                        ? JsonDocument.Parse(filteredBody).RootElement.GetArrayLength()
+                        : 0,
+                    data = filteredResponse.IsSuccessStatusCode
+                        ? JsonDocument.Parse(filteredBody).RootElement
+                        : JsonDocument.Parse("[]").RootElement
+                }
+            });
+        }
+
+        return Ok(debugInfo);
+    }
+    catch (Exception ex)
+    {
+        return BadRequest(new { error = "Debug query failed", details = ex.Message, stackTrace = ex.StackTrace });
+    }
+}
+
+
 
         /// <summary>
         /// Schedule an outfit for a specific date
