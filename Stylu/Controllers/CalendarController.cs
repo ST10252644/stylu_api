@@ -104,8 +104,8 @@ namespace Stylu.Controllers
         /// </summary>
         [HttpGet("scheduled")]
         public async Task<IActionResult> GetScheduledOutfits(
-        [FromQuery] string startDate,
-        [FromQuery] string endDate)
+            [FromQuery] string startDate,
+            [FromQuery] string endDate)
         {
             var userToken = Request.Headers["Authorization"].ToString();
             if (string.IsNullOrEmpty(userToken))
@@ -148,11 +148,22 @@ namespace Stylu.Controllers
                 {
                     var outfitId = schedule.GetProperty("outfit_id").GetInt32();
         
-                    // Fetch outfit with items
+                    // ✅ CORRECTED: Now properly joins to get subcategory NAME
                     var outfitUrl = $"{supabaseUrl}/rest/v1/outfit?" +
                         $"outfit_id=eq.{outfitId}&" +
                         $"user_id=eq.{userId}&" +
-                        $"select=outfit_id,outfit_name,category,outfit_item(item_id,layout_data,item(item_id,item_name,image_url,colour,subcategory_id))";
+                        $"select=outfit_id,outfit_name,category," +
+                        $"outfit_item(" +
+                            $"item_id," +
+                            $"layout_data," +
+                            $"item:item_id(" +
+                                $"item_id," +
+                                $"item_name," +
+                                $"image_url," +
+                                $"colour," +
+                                $"sub_category:subcategory_id(name)" +  // ✅ Get subcategory name
+                            $")" +
+                        $")";
         
                     var outfitRequest = new HttpRequestMessage(HttpMethod.Get, outfitUrl);
                     outfitRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -162,7 +173,10 @@ namespace Stylu.Controllers
                     var outfitBody = await outfitResponse.Content.ReadAsStringAsync();
         
                     if (!outfitResponse.IsSuccessStatusCode)
+                    {
+                        Console.WriteLine($"Failed to fetch outfit {outfitId}: {outfitBody}");
                         continue; // Skip if outfit not found or deleted
+                    }
         
                     var outfits = JsonDocument.Parse(outfitBody).RootElement;
                     if (outfits.GetArrayLength() == 0)
@@ -179,14 +193,39 @@ namespace Stylu.Controllers
                             if (outfitItem.TryGetProperty("item", out var item) && 
                                 item.ValueKind != JsonValueKind.Null)
                             {
+                                // Get subcategory name from nested object
+                                var subcategoryName = "";
+                                if (item.TryGetProperty("sub_category", out var subCat) && 
+                                    subCat.ValueKind != JsonValueKind.Null)
+                                {
+                                    subcategoryName = subCat.TryGetProperty("name", out var scName) 
+                                        ? scName.GetString() ?? "" 
+                                        : "";
+                                }
+        
+                                // Parse layoutData if present
+                                object? layoutDataObj = null;
+                                if (outfitItem.TryGetProperty("layout_data", out var ld) && 
+                                    ld.ValueKind != JsonValueKind.Null)
+                                {
+                                    layoutDataObj = new
+                                    {
+                                        x = ld.TryGetProperty("x", out var x) ? x.GetDouble() : 0.0,
+                                        y = ld.TryGetProperty("y", out var y) ? y.GetDouble() : 0.0,
+                                        scale = ld.TryGetProperty("scale", out var scale) ? scale.GetDouble() : 1.0,
+                                        width = ld.TryGetProperty("width", out var w) ? w.GetInt32() : 100,
+                                        height = ld.TryGetProperty("height", out var h) ? h.GetInt32() : 100
+                                    };
+                                }
+        
                                 items.Add(new
                                 {
                                     itemId = item.GetProperty("item_id").GetInt32(),
                                     name = item.TryGetProperty("item_name", out var n) ? n.GetString() ?? "" : "",
                                     imageUrl = item.TryGetProperty("image_url", out var url) ? url.GetString() ?? "" : "",
                                     colour = item.TryGetProperty("colour", out var col) ? col.GetString() : null,
-                                    subcategory = item.TryGetProperty("subcategory_id", out var sub) ? sub.GetInt32().ToString() : "",
-                                    layoutData = outfitItem.TryGetProperty("layout_data", out var ld) ? ld : (JsonElement?)null
+                                    subcategory = subcategoryName,  // ✅ Now returns name as string
+                                    layoutData = layoutDataObj
                                 });
                             }
                         }
@@ -216,6 +255,9 @@ namespace Stylu.Controllers
                 return BadRequest(new { error = "Invalid request", details = ex.Message });
             }
         }
+
+
+        
         /// <summary>
         /// Delete a scheduled outfit
         /// DELETE /api/Calendar/schedule/{id}
