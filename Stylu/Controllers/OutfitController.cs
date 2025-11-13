@@ -50,7 +50,7 @@ namespace Stylu.Controllers
             return Ok(JsonDocument.Parse(body).RootElement);
         }
 
-        [HttpPost]
+ [HttpPost]
         public async Task<IActionResult> CreateOutfit([FromBody] JsonElement requestBody)
         {
             var userToken = Request.Headers["Authorization"].ToString();
@@ -65,13 +65,29 @@ namespace Stylu.Controllers
             var supabaseUrl = _config["Supabase:Url"];
             var supabaseKey = _config["Supabase:AnonKey"];
 
-            var outfitData = new
+            // Extract schedule
+            string? schedule = null;
+            if (requestBody.TryGetProperty("schedule", out var scheduleElement))
             {
-                user_id = userId,
-                outfit_name = requestBody.GetProperty("name").GetString()
-            };
+                schedule = scheduleElement.GetString();
+                _logger.LogInformation($"Creating outfit with schedule: {schedule}");
+            }
+
+            // Create outfit
+            var outfitData = new Dictionary<string, object?>
+    {
+        { "user_id", userId },
+        { "outfit_name", requestBody.GetProperty("name").GetString() }
+    };
+
+            if (!string.IsNullOrEmpty(schedule))
+            {
+                outfitData["schedule"] = schedule;
+            }
 
             var outfitJsonContent = JsonSerializer.Serialize(outfitData);
+            _logger.LogInformation($"Sending to Supabase: {outfitJsonContent}");
+
             var outfitRequest = new HttpRequestMessage(HttpMethod.Post,
                 $"{supabaseUrl}/rest/v1/outfit")
             {
@@ -85,48 +101,133 @@ namespace Stylu.Controllers
             var outfitResponse = await _httpClient.SendAsync(outfitRequest);
             var outfitBody = await outfitResponse.Content.ReadAsStringAsync();
 
+            _logger.LogInformation($"Supabase response: {outfitBody}");
+
             if (!outfitResponse.IsSuccessStatusCode)
                 return StatusCode((int)outfitResponse.StatusCode, new { error = $"Failed to create outfit: {outfitBody}" });
 
             var outfitArray = JsonDocument.Parse(outfitBody).RootElement;
             var outfitId = outfitArray[0].GetProperty("outfit_id").GetInt32();
 
+            // ✅ FIX: Handle BOTH "items" (with layout) AND "itemIds" (simple array)
             if (requestBody.TryGetProperty("items", out var items))
             {
                 var itemsList = new List<object>();
-                foreach (var item in items.EnumerateArray())
+
+                // Check if it's a simple array of IDs or objects with layout
+                var firstItem = items.EnumerateArray().FirstOrDefault();
+
+                if (firstItem.ValueKind == JsonValueKind.Number)
                 {
-                    var layoutData = new
+                    // ✅ SIMPLE ARRAY: [52, 54, 65, 66]
+                    _logger.LogInformation("Processing simple item IDs array");
+
+                    foreach (var itemId in items.EnumerateArray())
                     {
-                        x = item.GetProperty("x").GetDouble(),
-                        y = item.GetProperty("y").GetDouble(),
-                        scale = item.GetProperty("scale").GetDouble(),
-                        width = item.GetProperty("width").GetInt32(),
-                        height = item.GetProperty("height").GetInt32()
+                        itemsList.Add(new
+                        {
+                            outfit_id = outfitId,
+                            item_id = itemId.GetInt32()
+                            // No layout_data - will be null
+                        });
+                    }
+                }
+                else
+                {
+                    // ✅ COMPLEX ARRAY: Objects with layout data
+                    _logger.LogInformation("Processing items with layout data");
+
+                    foreach (var item in items.EnumerateArray())
+                    {
+                        var layoutData = new
+                        {
+                            x = item.GetProperty("x").GetDouble(),
+                            y = item.GetProperty("y").GetDouble(),
+                            scale = item.GetProperty("scale").GetDouble(),
+                            width = item.GetProperty("width").GetInt32(),
+                            height = item.GetProperty("height").GetInt32()
+                        };
+
+                        itemsList.Add(new
+                        {
+                            outfit_id = outfitId,
+                            item_id = item.GetProperty("itemId").GetInt32(),
+                            layout_data = layoutData
+                        });
+                    }
+                }
+
+                if (itemsList.Count > 0)
+                {
+                    var itemsJsonContent = JsonSerializer.Serialize(itemsList);
+                    _logger.LogInformation($"Inserting {itemsList.Count} items: {itemsJsonContent}");
+
+                    var itemsRequest = new HttpRequestMessage(HttpMethod.Post,
+                        $"{supabaseUrl}/rest/v1/outfit_item")
+                    {
+                        Content = new StringContent(itemsJsonContent, Encoding.UTF8, "application/json")
                     };
 
+                    itemsRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                    itemsRequest.Headers.Add("apikey", supabaseKey);
+
+                    var itemsResponse = await _httpClient.SendAsync(itemsRequest);
+                    var itemsBody = await itemsResponse.Content.ReadAsStringAsync();
+
+                    _logger.LogInformation($"Items insert response: {itemsBody}");
+
+                    if (!itemsResponse.IsSuccessStatusCode)
+                    {
+                        _logger.LogError($"Failed to insert items: {itemsBody}");
+                        return StatusCode((int)itemsResponse.StatusCode, new { error = "Outfit created but failed to add items", details = itemsBody });
+                    }
+
+                    _logger.LogInformation($"✅ Successfully inserted {itemsList.Count} items");
+                }
+            }
+            // ✅ ALSO CHECK FOR "itemIds" (what Android is currently sending)
+            else if (requestBody.TryGetProperty("itemIds", out var itemIds))
+            {
+                _logger.LogInformation("Processing itemIds array");
+
+                var itemsList = new List<object>();
+
+                foreach (var itemId in itemIds.EnumerateArray())
+                {
                     itemsList.Add(new
                     {
                         outfit_id = outfitId,
-                        item_id = item.GetProperty("itemId").GetInt32(),
-                        layout_data = layoutData
+                        item_id = itemId.GetInt32()
                     });
                 }
 
-                var itemsJsonContent = JsonSerializer.Serialize(itemsList);
-                var itemsRequest = new HttpRequestMessage(HttpMethod.Post,
-                    $"{supabaseUrl}/rest/v1/outfit_item")
+                if (itemsList.Count > 0)
                 {
-                    Content = new StringContent(itemsJsonContent, Encoding.UTF8, "application/json")
-                };
+                    var itemsJsonContent = JsonSerializer.Serialize(itemsList);
+                    _logger.LogInformation($"Inserting {itemsList.Count} items: {itemsJsonContent}");
 
-                itemsRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                itemsRequest.Headers.Add("apikey", supabaseKey);
+                    var itemsRequest = new HttpRequestMessage(HttpMethod.Post,
+                        $"{supabaseUrl}/rest/v1/outfit_item")
+                    {
+                        Content = new StringContent(itemsJsonContent, Encoding.UTF8, "application/json")
+                    };
 
-                var itemsResponse = await _httpClient.SendAsync(itemsRequest);
+                    itemsRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                    itemsRequest.Headers.Add("apikey", supabaseKey);
 
-                if (!itemsResponse.IsSuccessStatusCode)
-                    return StatusCode((int)itemsResponse.StatusCode, new { error = "Outfit created but failed to add items" });
+                    var itemsResponse = await _httpClient.SendAsync(itemsRequest);
+                    var itemsBody = await itemsResponse.Content.ReadAsStringAsync();
+
+                    _logger.LogInformation($"Items insert response: {itemsBody}");
+
+                    if (!itemsResponse.IsSuccessStatusCode)
+                    {
+                        _logger.LogError($"Failed to insert items: {itemsBody}");
+                        return StatusCode((int)itemsResponse.StatusCode, new { error = "Outfit created but failed to add items", details = itemsBody });
+                    }
+
+                    _logger.LogInformation($"✅ Successfully inserted {itemsList.Count} items");
+                }
             }
 
             return Ok(new
