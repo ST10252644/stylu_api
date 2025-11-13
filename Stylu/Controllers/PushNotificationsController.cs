@@ -1,8 +1,3 @@
-﻿using FirebaseAdmin;
-using FirebaseAdmin.Messaging;
-using Google.Apis.Auth.OAuth2;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Builder.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
 using System.Text;
@@ -12,399 +7,242 @@ namespace Stylu.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class PushNotificationController : ControllerBase
+    public class NotificationController : ControllerBase
     {
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _config;
-        private readonly FirebaseMessaging _messaging;
+        private readonly ILogger<NotificationController> _logger;
 
-        public PushNotificationController(HttpClient httpClient, IConfiguration config)
+        public NotificationController(
+            HttpClient httpClient, 
+            IConfiguration config,
+            ILogger<NotificationController> logger)
         {
             _httpClient = httpClient;
             _config = config;
-
-            // Initialize Firebase Admin SDK (do this once in Program.cs or here)
-            if (FirebaseApp.DefaultInstance == null)
-            {
-                var credential = GoogleCredential.FromJson(_config["Firebase:ServiceAccountJson"]);
-                FirebaseApp.Create(new AppOptions()
-                {
-                    Credential = credential
-                });
-            }
-            _messaging = FirebaseMessaging.DefaultInstance;
+            _logger = logger;
         }
 
-        // POST: api/PushNotification/register
-        [HttpPost("register")]
-        [Authorize]
-        public async Task<IActionResult> RegisterToken([FromBody] JsonElement requestBody)
+        /// <summary>
+        /// Save a notification to Supabase using Service Role key (server-side)
+        /// This endpoint works even when user is logged out
+        /// </summary>
+        [HttpPost("save")]
+        public async Task<IActionResult> SaveNotification([FromBody] SaveNotificationRequest request)
         {
             try
             {
-                var userToken = Request.Headers["Authorization"].ToString();
-                if (string.IsNullOrEmpty(userToken))
-                    return Unauthorized(new { error = "Missing token" });
+                _logger.LogInformation("Saving notification for user: {UserId}", request.UserId);
 
-                var token = userToken.Replace("Bearer ", "");
-                var userId = ExtractUserIdFromToken(token);
-                if (string.IsNullOrEmpty(userId))
-                    return Unauthorized(new { error = "Invalid token" });
+                // Validate request
+                if (string.IsNullOrEmpty(request.UserId))
+                    return BadRequest(new { error = "userId is required" });
 
-                if (!requestBody.TryGetProperty("fcmToken", out var fcmTokenElement))
-                    return BadRequest(new { error = "fcmToken is required" });
+                if (string.IsNullOrEmpty(request.Title))
+                    return BadRequest(new { error = "title is required" });
 
-                var fcmToken = fcmTokenElement.GetString();
-                var platform = requestBody.TryGetProperty("platform", out var platformElement)
-                    ? platformElement.GetString() : "android";
+                if (string.IsNullOrEmpty(request.Message))
+                    return BadRequest(new { error = "message is required" });
 
+                // Get Supabase configuration
                 var supabaseUrl = _config["Supabase:Url"];
-                var supabaseKey = _config["Supabase:AnonKey"];
+                var serviceRoleKey = _config["Supabase:ServiceRoleKey"]; // ⚠️ IMPORTANT: Use Service Role, not Anon key
 
-                // Check if token already exists
-                var checkRequest = new HttpRequestMessage(HttpMethod.Get,
-                    $"{supabaseUrl}/rest/v1/device_tokens?fcm_token=eq.{fcmToken}&select=*");
-                checkRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                checkRequest.Headers.Add("apikey", supabaseKey);
-
-                var checkResponse = await _httpClient.SendAsync(checkRequest);
-                var checkBody = await checkResponse.Content.ReadAsStringAsync();
-                var existingTokens = JsonDocument.Parse(checkBody).RootElement;
-
-                HttpRequestMessage request;
-                if (existingTokens.GetArrayLength() > 0)
+                if (string.IsNullOrEmpty(serviceRoleKey))
                 {
-                    // Update existing token
-                    var updateData = new
-                    {
-                        user_id = userId,
-                        is_active = true,
-                        platform = platform,
-                        updated_at = DateTime.UtcNow.ToString("o")
-                    };
-
-                    request = new HttpRequestMessage(HttpMethod.Patch,
-                        $"{supabaseUrl}/rest/v1/device_tokens?fcm_token=eq.{fcmToken}")
-                    {
-                        Content = new StringContent(
-                            JsonSerializer.Serialize(updateData),
-                            Encoding.UTF8,
-                            "application/json"
-                        )
-                    };
-                }
-                else
-                {
-                    // Insert new token
-                    var insertData = new
-                    {
-                        user_id = userId,
-                        fcm_token = fcmToken,
-                        platform = platform,
-                        is_active = true
-                    };
-
-                    request = new HttpRequestMessage(HttpMethod.Post,
-                        $"{supabaseUrl}/rest/v1/device_tokens")
-                    {
-                        Content = new StringContent(
-                            JsonSerializer.Serialize(insertData),
-                            Encoding.UTF8,
-                            "application/json"
-                        )
-                    };
-                    request.Headers.Add("Prefer", "return=representation");
+                    _logger.LogError("Supabase Service Role Key not configured");
+                    return StatusCode(500, new { error = "Server configuration error" });
                 }
 
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                request.Headers.Add("apikey", supabaseKey);
+                // Use provided timestamp or current UTC time
+                var timestamp = string.IsNullOrEmpty(request.Timestamp)
+                    ? DateTime.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss")
+                    : request.Timestamp;
 
-                var response = await _httpClient.SendAsync(request);
-                var responseBody = await response.Content.ReadAsStringAsync();
-
-                if (!response.IsSuccessStatusCode)
-                    return StatusCode((int)response.StatusCode, new { error = "Failed to register token" });
-
-                return Ok(new
+                // Prepare notification data
+                var notificationData = new
                 {
-                    success = true,
-                    message = "Token registered successfully"
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { error = "Internal server error", details = ex.Message });
-            }
-        }
+                    user_id = request.UserId,
+                    title = request.Title,
+                    message = request.Message,
+                    type = request.Type ?? "general",
+                    scheduled_at = timestamp,
+                    sent_at = timestamp,
+                    status = request.Status ?? "sent",
+                    data = request.Data // Additional JSONB data
+                };
 
-        // POST: api/PushNotification/unregister
-        [HttpPost("unregister")]
-        [Authorize]
-        public async Task<IActionResult> UnregisterToken([FromBody] JsonElement requestBody)
-        {
-            try
-            {
-                var userToken = Request.Headers["Authorization"].ToString();
-                if (string.IsNullOrEmpty(userToken))
-                    return Unauthorized(new { error = "Missing token" });
+                _logger.LogDebug("Notification payload: {Payload}", JsonSerializer.Serialize(notificationData));
 
-                var token = userToken.Replace("Bearer ", "");
-                var userId = ExtractUserIdFromToken(token);
-                if (string.IsNullOrEmpty(userId))
-                    return Unauthorized(new { error = "Invalid token" });
-
-                var supabaseUrl = _config["Supabase:Url"];
-                var supabaseKey = _config["Supabase:AnonKey"];
-
-                var updateData = new { is_active = false };
-                var request = new HttpRequestMessage(HttpMethod.Patch,
-                    $"{supabaseUrl}/rest/v1/device_tokens?user_id=eq.{userId}")
+                // Create request to Supabase
+                var httpRequest = new HttpRequestMessage(HttpMethod.Post, 
+                    $"{supabaseUrl}/rest/v1/notifications")
                 {
                     Content = new StringContent(
-                        JsonSerializer.Serialize(updateData),
+                        JsonSerializer.Serialize(notificationData),
                         Encoding.UTF8,
                         "application/json"
                     )
                 };
 
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                request.Headers.Add("apikey", supabaseKey);
+                // ⚠️ CRITICAL: Use Service Role key for server-side operations
+                httpRequest.Headers.Add("apikey", serviceRoleKey);
+                httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", serviceRoleKey);
+                httpRequest.Headers.Add("Prefer", "return=representation");
 
-                var response = await _httpClient.SendAsync(request);
+                // Send to Supabase
+                var response = await _httpClient.SendAsync(httpRequest);
+                var responseBody = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
-                    return StatusCode((int)response.StatusCode, new { error = "Failed to unregister token" });
+                {
+                    _logger.LogError("Supabase error: {StatusCode} - {Body}", response.StatusCode, responseBody);
+                    return StatusCode((int)response.StatusCode, new 
+                    { 
+                        error = "Failed to save notification",
+                        details = responseBody 
+                    });
+                }
+
+                _logger.LogInformation("✅ Notification saved successfully for user: {UserId}", request.UserId);
+
+                // Parse and return the saved notification
+                var savedNotification = JsonSerializer.Deserialize<JsonElement>(responseBody);
 
                 return Ok(new
                 {
                     success = true,
-                    message = "Token unregistered successfully"
+                    message = "Notification saved successfully",
+                    notification = savedNotification
                 });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { error = "Internal server error", details = ex.Message });
+                _logger.LogError(ex, "Error saving notification");
+                return StatusCode(500, new 
+                { 
+                    error = "Internal server error", 
+                    details = ex.Message 
+                });
             }
         }
 
-        // POST: api/PushNotification/send
-        [HttpPost("send")]
-        [Authorize]
-        public async Task<IActionResult> SendNotification([FromBody] JsonElement requestBody)
+        /// <summary>
+        /// Batch save multiple notifications (useful for syncing queued notifications)
+        /// </summary>
+        [HttpPost("save-batch")]
+        public async Task<IActionResult> SaveNotificationBatch([FromBody] BatchSaveRequest batchRequest)
         {
             try
             {
-                var userToken = Request.Headers["Authorization"].ToString();
-                if (string.IsNullOrEmpty(userToken))
-                    return Unauthorized(new { error = "Missing token" });
+                _logger.LogInformation("Batch saving {Count} notifications", batchRequest.Notifications.Count);
 
-                var token = userToken.Replace("Bearer ", "");
+                if (batchRequest.Notifications == null || batchRequest.Notifications.Count == 0)
+                    return BadRequest(new { error = "notifications array is required and cannot be empty" });
+
                 var supabaseUrl = _config["Supabase:Url"];
-                var supabaseKey = _config["Supabase:AnonKey"];
+                var serviceRoleKey = _config["Supabase:ServiceRoleKey"];
 
-                if (!requestBody.TryGetProperty("title", out var titleElement) ||
-                    !requestBody.TryGetProperty("body", out var bodyElement))
-                    return BadRequest(new { error = "Title and body are required" });
-
-                var title = titleElement.GetString();
-                var body = bodyElement.GetString();
-
-                // Get target user tokens
-                string? targetUserId = null;
-                if (requestBody.TryGetProperty("userId", out var userIdElement))
-                    targetUserId = userIdElement.GetString();
-
-                var tokensRequest = new HttpRequestMessage(HttpMethod.Get,
-                    targetUserId != null
-                        ? $"{supabaseUrl}/rest/v1/device_tokens?user_id=eq.{targetUserId}&is_active=eq.true&select=fcm_token"
-                        : $"{supabaseUrl}/rest/v1/device_tokens?is_active=eq.true&select=fcm_token");
-
-                tokensRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                tokensRequest.Headers.Add("apikey", supabaseKey);
-
-                var tokensResponse = await _httpClient.SendAsync(tokensRequest);
-                var tokensBody = await tokensResponse.Content.ReadAsStringAsync();
-                var tokensData = JsonDocument.Parse(tokensBody).RootElement;
-
-                if (tokensData.GetArrayLength() == 0)
-                    return NotFound(new { error = "No active tokens found" });
-
-                // Extract data payload if provided
-                var dataPayload = new Dictionary<string, string>();
-                if (requestBody.TryGetProperty("data", out var dataElement))
+                if (string.IsNullOrEmpty(serviceRoleKey))
                 {
-                    foreach (var prop in dataElement.EnumerateObject())
-                    {
-                        dataPayload[prop.Name] = prop.Value.ToString();
-                    }
+                    _logger.LogError("Supabase Service Role Key not configured");
+                    return StatusCode(500, new { error = "Server configuration error" });
                 }
 
-                // Send notifications
                 var successCount = 0;
                 var failureCount = 0;
+                var errors = new List<string>();
 
-                foreach (var tokenRecord in tokensData.EnumerateArray())
+                foreach (var notif in batchRequest.Notifications)
                 {
-                    var fcmToken = tokenRecord.GetProperty("fcm_token").GetString();
-
                     try
                     {
-                        var message = new Message()
+                        var timestamp = string.IsNullOrEmpty(notif.Timestamp)
+                            ? DateTime.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss")
+                            : notif.Timestamp;
+
+                        var notificationData = new
                         {
-                            Token = fcmToken,
-                            Notification = new Notification()
-                            {
-                                Title = title,
-                                Body = body
-                            },
-                            Data = dataPayload,
-                            Android = new AndroidConfig()
-                            {
-                                Priority = Priority.High,
-                                Notification = new AndroidNotification()
-                                {
-                                    ChannelId = "stylu_channel",
-                                    Sound = "default",
-                                    Priority = NotificationPriority.MAX
-                                }
-                            }
+                            user_id = notif.UserId,
+                            title = notif.Title,
+                            message = notif.Message,
+                            type = notif.Type ?? "general",
+                            scheduled_at = timestamp,
+                            sent_at = timestamp,
+                            status = notif.Status ?? "sent",
+                            data = notif.Data
                         };
 
-                        var response = await _messaging.SendAsync(message);
-                        successCount++;
+                        var httpRequest = new HttpRequestMessage(HttpMethod.Post,
+                            $"{supabaseUrl}/rest/v1/notifications")
+                        {
+                            Content = new StringContent(
+                                JsonSerializer.Serialize(notificationData),
+                                Encoding.UTF8,
+                                "application/json"
+                            )
+                        };
+
+                        httpRequest.Headers.Add("apikey", serviceRoleKey);
+                        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", serviceRoleKey);
+
+                        var response = await _httpClient.SendAsync(httpRequest);
+
+                        if (response.IsSuccessStatusCode)
+                        {
+                            successCount++;
+                        }
+                        else
+                        {
+                            failureCount++;
+                            var errorBody = await response.Content.ReadAsStringAsync();
+                            errors.Add($"Failed to save notification '{notif.Title}': {errorBody}");
+                        }
                     }
                     catch (Exception ex)
                     {
                         failureCount++;
-
-                        // Mark invalid tokens as inactive
-                        if (ex.Message.Contains("registration-token-not-registered") ||
-                            ex.Message.Contains("invalid-registration-token"))
-                        {
-                            await MarkTokenInactive(fcmToken, token, supabaseUrl, supabaseKey);
-                        }
+                        errors.Add($"Exception for notification '{notif.Title}': {ex.Message}");
                     }
                 }
 
+                _logger.LogInformation("Batch complete: {Success} succeeded, {Failed} failed", 
+                    successCount, failureCount);
+
                 return Ok(new
                 {
-                    success = true,
-                    message = "Notifications sent",
-                    successCount = successCount,
-                    failureCount = failureCount
+                    success = failureCount == 0,
+                    successCount,
+                    failureCount,
+                    errors = errors.Any() ? errors : null
                 });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { error = "Failed to send notification", details = ex.Message });
-            }
-        }
-
-        // POST: api/PushNotification/send-to-topic
-        [HttpPost("send-to-topic")]
-        [Authorize]
-        public async Task<IActionResult> SendToTopic([FromBody] JsonElement requestBody)
-        {
-            try
-            {
-                if (!requestBody.TryGetProperty("topic", out var topicElement) ||
-                    !requestBody.TryGetProperty("title", out var titleElement) ||
-                    !requestBody.TryGetProperty("body", out var bodyElement))
-                    return BadRequest(new { error = "Topic, title, and body are required" });
-
-                var topic = topicElement.GetString();
-                var title = titleElement.GetString();
-                var body = bodyElement.GetString();
-
-                var dataPayload = new Dictionary<string, string>();
-                if (requestBody.TryGetProperty("data", out var dataElement))
-                {
-                    foreach (var prop in dataElement.EnumerateObject())
-                    {
-                        dataPayload[prop.Name] = prop.Value.ToString();
-                    }
-                }
-
-                var message = new Message()
-                {
-                    Topic = topic,
-                    Notification = new Notification()
-                    {
-                        Title = title,
-                        Body = body
-                    },
-                    Data = dataPayload,
-                    Android = new AndroidConfig()
-                    {
-                        Priority = Priority.High,
-                        Notification = new AndroidNotification()
-                        {
-                            ChannelId = "stylu_channel",
-                            Sound = "default",
-                            Priority = NotificationPriority.MAX
-                        }
-                    }
-                };
-
-                var response = await _messaging.SendAsync(message);
-
-                return Ok(new
-                {
-                    success = true,
-                    message = "Topic notification sent successfully",
-                    messageId = response
+                _logger.LogError(ex, "Error in batch save");
+                return StatusCode(500, new 
+                { 
+                    error = "Internal server error", 
+                    details = ex.Message 
                 });
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { error = "Failed to send topic notification", details = ex.Message });
-            }
         }
+    }
 
-        // Helper: Mark token as inactive
-        private async Task MarkTokenInactive(string fcmToken, string authToken, string supabaseUrl, string supabaseKey)
-        {
-            try
-            {
-                var updateData = new { is_active = false };
-                var request = new HttpRequestMessage(HttpMethod.Patch,
-                    $"{supabaseUrl}/rest/v1/device_tokens?fcm_token=eq.{fcmToken}")
-                {
-                    Content = new StringContent(
-                        JsonSerializer.Serialize(updateData),
-                        Encoding.UTF8,
-                        "application/json"
-                    )
-                };
+    // Request models
+    public class SaveNotificationRequest
+    {
+        public string UserId { get; set; }
+        public string Title { get; set; }
+        public string Message { get; set; }
+        public string? Type { get; set; }
+        public string? Timestamp { get; set; }
+        public string? Status { get; set; }
+        public Dictionary<string, object>? Data { get; set; }
+    }
 
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
-                request.Headers.Add("apikey", supabaseKey);
-
-                await _httpClient.SendAsync(request);
-            }
-            catch { /* Ignore errors */ }
-        }
-
-        // Helper: Extract user ID from JWT
-        private string? ExtractUserIdFromToken(string token)
-        {
-            try
-            {
-                var parts = token.Split('.');
-                if (parts.Length != 3) return null;
-
-                var payload = parts[1];
-                var paddedPayload = payload.PadRight(payload.Length + (4 - payload.Length % 4) % 4, '=');
-                var jsonBytes = Convert.FromBase64String(paddedPayload);
-                var json = Encoding.UTF8.GetString(jsonBytes);
-                var doc = JsonDocument.Parse(json);
-
-                return doc.RootElement.GetProperty("sub").GetString();
-            }
-            catch
-            {
-                return null;
-            }
-        }
+    public class BatchSaveRequest
+    {
+        public List<SaveNotificationRequest> Notifications { get; set; }
     }
 }
