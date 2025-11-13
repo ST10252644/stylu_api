@@ -19,7 +19,7 @@ namespace Stylu.Controllers
         {
             _httpClient = httpClient;
             _config = config;
-             _logger = logger;
+            _logger = logger;
         }
 
         [HttpGet]
