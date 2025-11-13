@@ -13,11 +13,13 @@ namespace Stylu.Controllers
     {
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _config;
+        private readonly ILogger<OutfitController> _logger;
 
         public OutfitController(HttpClient httpClient, IConfiguration config)
         {
             _httpClient = httpClient;
             _config = config;
+             _logger = logger;
         }
 
         [HttpGet]
