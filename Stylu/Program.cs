@@ -6,7 +6,7 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // Get PORT from environment variable (Railway requirement)
-builder.WebHost.UseUrls("http://0.0.0.0:" + (Environment.GetEnvironmentVariable("PORT") ?? "5000"));
+builder.WebHost.UseUrls("http://0.0.0.0:" + (Environment.GetEnvironmentVariable("PORT") ?? "5050"));
 
 
 // Rest of your configuration...
