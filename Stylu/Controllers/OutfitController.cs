@@ -15,7 +15,7 @@ namespace Stylu.Controllers
         private readonly IConfiguration _config;
         private readonly ILogger<OutfitController> _logger;
 
-        public OutfitController(HttpClient httpClient, IConfiguration config)
+        public OutfitController(HttpClient httpClient, IConfiguration config, ILogger<OutfitController> logger)
         {
             _httpClient = httpClient;
             _config = config;
